@@ -207,7 +207,7 @@ export default function DashboardPage() {
         </ResponsiveGrid>
 
         {/* Quick Actions */}
-        <QuickActions actions={quickActions} />
+        <QuickActions />
 
         {/* Quick Expense Shortcuts */}
         <div className="mt-6 sm:mt-8 card-responsive">

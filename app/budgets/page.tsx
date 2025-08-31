@@ -18,7 +18,8 @@ export default function BudgetsPage() {
     getTotalBudget, 
     getTotalSpent, 
     getTotalRemaining, 
-    getOverallProgress 
+    getOverallProgress,
+    refreshBudgets
   } = useBudgets();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
@@ -128,7 +129,7 @@ export default function BudgetsPage() {
         <AddBudgetModal
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
-          onSave={() => fetchBudgets()}
+          onSave={() => refreshBudgets()}
         />
       </div>
     );
@@ -287,7 +288,7 @@ export default function BudgetsPage() {
       <AddBudgetModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSave={() => fetchBudgets()}
+        onSave={() => refreshBudgets()}
       />
     </div>
   );

@@ -1,7 +1,21 @@
 {
-  "/dashboard/page": "app/dashboard/page.js",
-  "/transactions/page": "app/transactions/page.js",
-  "/api/transactions/route": "app/api/transactions/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/auth/login/route": "app/api/auth/login/route.js",
+  "/analytics/page": "app/analytics/page.js",
+  "/api/auth/register/route": "app/api/auth/register/route.js",
+  "/api/budgets/[id]/route": "app/api/budgets/[id]/route.js",
+  "/api/demo/reset/route": "app/api/demo/reset/route.js",
   "/api/budgets/route": "app/api/budgets/route.js",
-  "/categories/page": "app/categories/page.js"
+  "/budgets/page": "app/budgets/page.js",
+  "/api/user/profile/route": "app/api/user/profile/route.js",
+  "/api/transactions/route": "app/api/transactions/route.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/categories/page": "app/categories/page.js",
+  "/notifications/page": "app/notifications/page.js",
+  "/page": "app/page.js",
+  "/settings/page": "app/settings/page.js",
+  "/transactions/page": "app/transactions/page.js",
+  "/test-cookies/page": "app/test-cookies/page.js",
+  "/auth/signup/page": "app/auth/signup/page.js",
+  "/auth/login/page": "app/auth/login/page.js"
 }

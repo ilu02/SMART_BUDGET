@@ -144,6 +144,11 @@ export default function CategoriesPage() {
   }, [user]);
 
   const fetchCategories = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await fetch(`/api/budgets?userId=${user.id}`);

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
+import { useBudgets } from '../contexts/BudgetContext';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -44,9 +45,124 @@ const currencies = [
   { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar', position: 'before' }
 ];
 
+// Budget template definitions
+interface BudgetTemplate {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  categories: {
+    category: string;
+    percentage: number;
+    icon: string;
+    color: string;
+    description?: string;
+  }[];
+  settings?: {
+    rolloverUnused?: boolean;
+    warningThreshold?: number;
+    autoSavePercentage?: number;
+    roundUpTransactions?: boolean;
+  };
+}
+
+const budgetTemplates: BudgetTemplate[] = [
+  {
+    id: '50-30-20',
+    name: '50/30/20 Rule',
+    description: '50% needs, 30% wants, 20% savings',
+    icon: 'ri-pie-chart-line',
+    categories: [
+      { category: 'Housing & Utilities', percentage: 25, icon: 'ri-home-line', color: '#3B82F6' },
+      { category: 'Food & Groceries', percentage: 15, icon: 'ri-restaurant-line', color: '#10B981' },
+      { category: 'Transportation', percentage: 10, icon: 'ri-car-line', color: '#F59E0B' },
+      { category: 'Entertainment', percentage: 15, icon: 'ri-gamepad-line', color: '#EF4444' },
+      { category: 'Shopping', percentage: 10, icon: 'ri-shopping-bag-line', color: '#8B5CF6' },
+      { category: 'Dining Out', percentage: 5, icon: 'ri-restaurant-2-line', color: '#06B6D4' },
+      { category: 'Emergency Fund', percentage: 10, icon: 'ri-shield-line', color: '#F97316' },
+      { category: 'Savings & Investments', percentage: 10, icon: 'ri-bank-line', color: '#EC4899' }
+    ],
+    settings: {
+      rolloverUnused: true,
+      warningThreshold: 80,
+      autoSavePercentage: 20
+    }
+  },
+  {
+    id: 'zero-based',
+    name: 'Zero-Based Budget',
+    description: 'Every dollar has a purpose',
+    icon: 'ri-calculator-line',
+    categories: [
+      { category: 'Housing & Utilities', percentage: 30, icon: 'ri-home-line', color: '#3B82F6' },
+      { category: 'Food & Groceries', percentage: 12, icon: 'ri-restaurant-line', color: '#10B981' },
+      { category: 'Transportation', percentage: 15, icon: 'ri-car-line', color: '#F59E0B' },
+      { category: 'Insurance', percentage: 8, icon: 'ri-shield-check-line', color: '#EF4444' },
+      { category: 'Debt Payments', percentage: 10, icon: 'ri-bank-card-line', color: '#8B5CF6' },
+      { category: 'Personal Care', percentage: 5, icon: 'ri-heart-line', color: '#06B6D4' },
+      { category: 'Entertainment', percentage: 5, icon: 'ri-gamepad-line', color: '#F97316' },
+      { category: 'Savings', percentage: 10, icon: 'ri-safe-line', color: '#EC4899' },
+      { category: 'Miscellaneous', percentage: 5, icon: 'ri-more-line', color: '#64748B' }
+    ],
+    settings: {
+      rolloverUnused: false,
+      warningThreshold: 90,
+      autoSavePercentage: 10
+    }
+  },
+  {
+    id: 'envelope',
+    name: 'Envelope Method',
+    description: 'Cash-based category budgeting',
+    icon: 'ri-mail-line',
+    categories: [
+      { category: 'Rent/Mortgage', percentage: 28, icon: 'ri-home-line', color: '#3B82F6' },
+      { category: 'Utilities', percentage: 7, icon: 'ri-flashlight-line', color: '#10B981' },
+      { category: 'Groceries', percentage: 12, icon: 'ri-shopping-cart-line', color: '#F59E0B' },
+      { category: 'Transportation', percentage: 12, icon: 'ri-car-line', color: '#EF4444' },
+      { category: 'Healthcare', percentage: 8, icon: 'ri-heart-pulse-line', color: '#8B5CF6' },
+      { category: 'Personal Care', percentage: 3, icon: 'ri-scissors-line', color: '#06B6D4' },
+      { category: 'Entertainment', percentage: 8, icon: 'ri-movie-line', color: '#F97316' },
+      { category: 'Clothing', percentage: 5, icon: 'ri-shirt-line', color: '#EC4899' },
+      { category: 'Savings', percentage: 12, icon: 'ri-piggy-bank-line', color: '#64748B' },
+      { category: 'Emergency Fund', percentage: 5, icon: 'ri-alarm-warning-line', color: '#DC2626' }
+    ],
+    settings: {
+      rolloverUnused: true,
+      warningThreshold: 85,
+      roundUpTransactions: true
+    }
+  },
+  {
+    id: 'pay-yourself-first',
+    name: 'Pay Yourself First',
+    description: 'Savings-focused approach',
+    icon: 'ri-coin-line',
+    categories: [
+      { category: 'Savings & Investments', percentage: 20, icon: 'ri-line-chart-line', color: '#10B981' },
+      { category: 'Emergency Fund', percentage: 10, icon: 'ri-shield-line', color: '#EF4444' },
+      { category: 'Housing & Utilities', percentage: 25, icon: 'ri-home-line', color: '#3B82F6' },
+      { category: 'Food & Groceries', percentage: 15, icon: 'ri-restaurant-line', color: '#F59E0B' },
+      { category: 'Transportation', percentage: 10, icon: 'ri-car-line', color: '#8B5CF6' },
+      { category: 'Healthcare', percentage: 5, icon: 'ri-heart-pulse-line', color: '#06B6D4' },
+      { category: 'Personal & Entertainment', percentage: 10, icon: 'ri-user-smile-line', color: '#F97316' },
+      { category: 'Miscellaneous', percentage: 5, icon: 'ri-more-line', color: '#EC4899' }
+    ],
+    settings: {
+      rolloverUnused: true,
+      warningThreshold: 75,
+      autoSavePercentage: 30
+    }
+  }
+];
+
 export default function BudgetPreferences() {
   const { budgetPreferences, updateBudgetPreferences, formatCurrency } = useSettings();
+  const { addBudget, budgets, refreshBudgets } = useBudgets();
   const [newCategory, setNewCategory] = useState('');
+  const [isApplyingTemplate, setIsApplyingTemplate] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<BudgetTemplate | null>(null);
+  const [monthlyIncome, setMonthlyIncome] = useState('');
 
   const handlePeriodChange = (period: 'weekly' | 'monthly' | 'yearly') => {
     updateBudgetPreferences({ defaultBudgetPeriod: period });
@@ -104,6 +220,92 @@ export default function BudgetPreferences() {
   const handleResetCategories = () => {
     updateBudgetPreferences({ defaultCategories: [...defaultCategories] });
     toast.success('Categories reset to defaults');
+  };
+
+  const handleApplyTemplate = (template: BudgetTemplate) => {
+    setSelectedTemplate(template);
+    setMonthlyIncome('');
+  };
+
+  const handleConfirmTemplate = async () => {
+    if (!selectedTemplate) return;
+    
+    if (!monthlyIncome || isNaN(Number(monthlyIncome)) || Number(monthlyIncome) <= 0) {
+      toast.error('Please enter a valid monthly income amount');
+      return;
+    }
+    
+    setIsApplyingTemplate(selectedTemplate.id);
+    
+    try {
+      const income = Number(monthlyIncome);
+      
+      // Apply template settings to budget preferences
+      if (selectedTemplate.settings) {
+        updateBudgetPreferences({
+          ...selectedTemplate.settings,
+          defaultCategories: selectedTemplate.categories.map(cat => cat.category)
+        });
+      }
+      
+      // Create budgets for each category in the template
+      const budgetPromises = selectedTemplate.categories.map(async (categoryTemplate) => {
+        const budgetAmount = (income * categoryTemplate.percentage) / 100;
+        
+        // Check if budget already exists for this category
+        const existingBudget = budgets.find(b => b.category === categoryTemplate.category);
+        
+        if (!existingBudget) {
+          return addBudget({
+            category: categoryTemplate.category,
+            budget: budgetAmount,
+            spent: 0,
+            icon: categoryTemplate.icon,
+            color: categoryTemplate.color,
+            description: `${categoryTemplate.percentage}% of monthly income (${selectedTemplate.name})`
+          });
+        } else {
+          // Update existing budget amount
+          const response = await fetch(`/api/budgets/${existingBudget.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              budget: budgetAmount,
+              description: `${categoryTemplate.percentage}% of monthly income (${selectedTemplate.name})`
+            }),
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to update budget for ${categoryTemplate.category}`);
+          }
+        }
+      });
+      
+      await Promise.all(budgetPromises);
+      await refreshBudgets();
+      
+      toast.success(
+        `${selectedTemplate.name} template applied successfully! Created budgets based on ${formatCurrency(income)} monthly income.`,
+        { duration: 4000 }
+      );
+      
+      setSelectedTemplate(null);
+      setMonthlyIncome('');
+      
+    } catch (error) {
+      console.error('Error applying template:', error);
+      toast.error('Failed to apply template. Please try again.');
+    } finally {
+      setIsApplyingTemplate(null);
+    }
+  };
+
+  const handleCancelTemplate = () => {
+    setSelectedTemplate(null);
+    setMonthlyIncome('');
+    setIsApplyingTemplate(null);
   };
 
   return (
@@ -425,42 +627,249 @@ export default function BudgetPreferences() {
       {/* Budget Templates */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Budget Templates</h3>
-        <p className="text-gray-600 mb-4">Quick-start templates based on common budgeting methods</p>
+        <p className="text-gray-600 mb-6">Quick-start templates based on common budgeting methods. These will create budgets based on your monthly income.</p>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-2">50/30/20 Rule</h4>
-            <p className="text-sm text-gray-500 mb-3">50% needs, 30% wants, 20% savings</p>
-            <Button variant="outline" size="sm" className="w-full">
-              Apply Template
-            </Button>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {budgetTemplates.map((template) => (
+            <div key={template.id} className="border border-gray-200 rounded-lg p-6 hover:border-gray-300 transition-colors">
+              <div className="flex items-start space-x-3 mb-4">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <i className={`${template.icon} text-blue-600 text-lg`} aria-hidden="true"></i>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-900 mb-1">{template.name}</h4>
+                  <p className="text-sm text-gray-500 mb-3">{template.description}</p>
+                </div>
+              </div>
+              
+              {/* Template Categories Preview */}
+              <div className="mb-4">
+                <h5 className="text-xs font-medium text-gray-700 mb-2 uppercase tracking-wide">Categories & Allocations</h5>
+                <div className="space-y-1">
+                  {template.categories.slice(0, 4).map((category) => (
+                    <div key={category.category} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-2 h-2 rounded-full" 
+                          style={{ backgroundColor: category.color }}
+                        ></div>
+                        <span className="text-gray-600">{category.category}</span>
+                      </div>
+                      <span className="font-medium text-gray-900">{category.percentage}%</span>
+                    </div>
+                  ))}
+                  {template.categories.length > 4 && (
+                    <div className="text-xs text-gray-400 pt-1">
+                      +{template.categories.length - 4} more categories
+                    </div>
+                  )}
+                </div>
+              </div>
 
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-2">Zero-Based Budget</h4>
-            <p className="text-sm text-gray-500 mb-3">Every dollar has a purpose</p>
-            <Button variant="outline" size="sm" className="w-full">
-              Apply Template
-            </Button>
-          </div>
-
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-2">Envelope Method</h4>
-            <p className="text-sm text-gray-500 mb-3">Cash-based category budgeting</p>
-            <Button variant="outline" size="sm" className="w-full">
-              Apply Template
-            </Button>
-          </div>
-
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-2">Pay Yourself First</h4>
-            <p className="text-sm text-gray-500 mb-3">Savings-focused approach</p>
-            <Button variant="outline" size="sm" className="w-full">
-              Apply Template
-            </Button>
+              {/* Template Settings Preview */}
+              {template.settings && (
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                  <h5 className="text-xs font-medium text-gray-700 mb-2 uppercase tracking-wide">Includes Settings</h5>
+                  <div className="space-y-1 text-xs text-gray-600">
+                    {template.settings.rolloverUnused !== undefined && (
+                      <div>• Rollover unused: {template.settings.rolloverUnused ? 'Yes' : 'No'}</div>
+                    )}
+                    {template.settings.warningThreshold && (
+                      <div>• Warning at: {template.settings.warningThreshold}%</div>
+                    )}
+                    {template.settings.autoSavePercentage && (
+                      <div>• Auto-save: {template.settings.autoSavePercentage}%</div>
+                    )}
+                    {template.settings.roundUpTransactions && (
+                      <div>• Round up transactions</div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+                onClick={() => handleApplyTemplate(template)}
+                disabled={isApplyingTemplate === template.id}
+              >
+                {isApplyingTemplate === template.id ? (
+                  <>
+                    <i className="ri-loader-4-line animate-spin mr-2" aria-hidden="true"></i>
+                    Applying...
+                  </>
+                ) : (
+                  <>
+                    <i className={`${template.icon} mr-2`} aria-hidden="true"></i>
+                    Apply Template
+                  </>
+                )}
+              </Button>
+            </div>
+          ))}
+        </div>
+        
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          <div className="flex items-start space-x-3">
+            <i className="ri-information-line text-blue-600 text-lg mt-0.5" aria-hidden="true"></i>
+            <div>
+              <h4 className="font-medium text-blue-900 mb-1">How Templates Work</h4>
+              <p className="text-sm text-blue-700">
+                When you apply a template, you'll be asked for your monthly income. The system will then create budget categories 
+                with amounts calculated as percentages of your income. Existing budgets for the same categories will be updated.
+              </p>
+            </div>
           </div>
         </div>
       </Card>
+
+      {/* Template Application Modal */}
+      {selectedTemplate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <i className={`${selectedTemplate.icon} text-blue-600 text-xl`} aria-hidden="true"></i>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">Apply {selectedTemplate.name}</h3>
+                    <p className="text-gray-500">{selectedTemplate.description}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleCancelTemplate}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <i className="ri-close-line text-2xl" aria-hidden="true"></i>
+                </button>
+              </div>
+
+              {/* Monthly Income Input */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Monthly Income ({budgetPreferences.currencySymbol})
+                </label>
+                <Input
+                  type="number"
+                  placeholder="Enter your monthly income"
+                  value={monthlyIncome}
+                  onChange={(e) => setMonthlyIncome(e.target.value)}
+                  className="text-lg"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  This will be used to calculate budget amounts based on the template percentages.
+                </p>
+              </div>
+
+              {/* Budget Preview */}
+              {monthlyIncome && !isNaN(Number(monthlyIncome)) && Number(monthlyIncome) > 0 && (
+                <div className="mb-6">
+                  <h4 className="font-medium text-gray-900 mb-3">Budget Preview</h4>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {selectedTemplate.categories.map((category) => {
+                        const amount = (Number(monthlyIncome) * category.percentage) / 100;
+                        return (
+                          <div key={category.category} className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <div 
+                                className="w-3 h-3 rounded-full" 
+                                style={{ backgroundColor: category.color }}
+                              ></div>
+                              <span className="text-sm text-gray-700">{category.category}</span>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-medium text-gray-900">
+                                {formatCurrency(amount)}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {category.percentage}%
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="flex justify-between items-center font-medium">
+                        <span>Total Allocated:</span>
+                        <span>{formatCurrency(Number(monthlyIncome))}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Template Settings */}
+              {selectedTemplate.settings && (
+                <div className="mb-6">
+                  <h4 className="font-medium text-gray-900 mb-3">Template Settings</h4>
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <div className="space-y-2 text-sm">
+                      {selectedTemplate.settings.rolloverUnused !== undefined && (
+                        <div className="flex items-center space-x-2">
+                          <i className="ri-arrow-right-line text-blue-600" aria-hidden="true"></i>
+                          <span>Rollover unused budget: <strong>{selectedTemplate.settings.rolloverUnused ? 'Enabled' : 'Disabled'}</strong></span>
+                        </div>
+                      )}
+                      {selectedTemplate.settings.warningThreshold && (
+                        <div className="flex items-center space-x-2">
+                          <i className="ri-arrow-right-line text-blue-600" aria-hidden="true"></i>
+                          <span>Warning threshold: <strong>{selectedTemplate.settings.warningThreshold}%</strong></span>
+                        </div>
+                      )}
+                      {selectedTemplate.settings.autoSavePercentage && (
+                        <div className="flex items-center space-x-2">
+                          <i className="ri-arrow-right-line text-blue-600" aria-hidden="true"></i>
+                          <span>Auto-save percentage: <strong>{selectedTemplate.settings.autoSavePercentage}%</strong></span>
+                        </div>
+                      )}
+                      {selectedTemplate.settings.roundUpTransactions && (
+                        <div className="flex items-center space-x-2">
+                          <i className="ri-arrow-right-line text-blue-600" aria-hidden="true"></i>
+                          <span><strong>Round up transactions</strong> will be enabled</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={handleCancelTemplate}
+                  className="flex-1"
+                  disabled={isApplyingTemplate === selectedTemplate.id}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmTemplate}
+                  className="flex-1"
+                  disabled={!monthlyIncome || isNaN(Number(monthlyIncome)) || Number(monthlyIncome) <= 0 || isApplyingTemplate === selectedTemplate.id}
+                >
+                  {isApplyingTemplate === selectedTemplate.id ? (
+                    <>
+                      <i className="ri-loader-4-line animate-spin mr-2" aria-hidden="true"></i>
+                      Applying Template...
+                    </>
+                  ) : (
+                    <>
+                      <i className="ri-check-line mr-2" aria-hidden="true"></i>
+                      Apply Template
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

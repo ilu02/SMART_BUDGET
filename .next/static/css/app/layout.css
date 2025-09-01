@@ -1305,6 +1305,10 @@ button, a, input, textarea, select {
   --tw-border-opacity: 1;
   border-color: rgb(254 240 138 / var(--tw-border-opacity, 1));
 }
+.border-yellow-300{
+  --tw-border-opacity: 1;
+  border-color: rgb(253 224 71 / var(--tw-border-opacity, 1));
+}
 .border-l-blue-500{
   --tw-border-opacity: 1;
   border-left-color: rgb(59 130 246 / var(--tw-border-opacity, 1));
@@ -1883,6 +1887,9 @@ button, a, input, textarea, select {
 .pt-0{
   padding-top: 0px;
 }
+.pt-1{
+  padding-top: 0.25rem;
+}
 .pt-2{
   padding-top: 0.5rem;
 }
@@ -1955,6 +1962,9 @@ button, a, input, textarea, select {
 .font-semibold{
   font-weight: 600;
 }
+.uppercase{
+  text-transform: uppercase;
+}
 .capitalize{
   text-transform: capitalize;
 }
@@ -1966,6 +1976,9 @@ button, a, input, textarea, select {
 }
 .tracking-tight{
   letter-spacing: -0.025em;
+}
+.tracking-wide{
+  letter-spacing: 0.025em;
 }
 .text-blue-100{
   --tw-text-opacity: 1;
@@ -3162,6 +3175,11 @@ button, a, input, textarea, select {
   background-color: rgb(255 255 255 / 0.5);
 }
 
+.hover\:bg-yellow-100:hover{
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 249 195 / var(--tw-bg-opacity, 1));
+}
+
 .hover\:bg-gradient-to-r:hover{
   background-image: linear-gradient(to right, var(--tw-gradient-stops));
 }
@@ -3232,6 +3250,11 @@ button, a, input, textarea, select {
 .hover\:text-red-700:hover{
   --tw-text-opacity: 1;
   color: rgb(185 28 28 / var(--tw-text-opacity, 1));
+}
+
+.hover\:text-purple-600:hover{
+  --tw-text-opacity: 1;
+  color: rgb(147 51 234 / var(--tw-text-opacity, 1));
 }
 
 .hover\:underline:hover{
@@ -3507,6 +3530,9 @@ button, a, input, textarea, select {
   .sm\:w-12{
     width: 3rem;
   }
+  .sm\:grid-cols-2{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .sm\:grid-cols-3{
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -3655,6 +3681,9 @@ button, a, input, textarea, select {
   }
   .lg\:grid-cols-4{
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .lg\:grid-cols-5{
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
   .lg\:flex-row{
     flex-direction: row;

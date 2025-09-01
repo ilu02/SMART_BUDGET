@@ -31,8 +31,9 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const { formatCurrency } = useSettings();
-  const { refreshBudgets } = useBudgets();
+  const { refreshBudgets, deleteBudget } = useBudgets();
   const router = useRouter();
   const percentage = (budget.spent / budget.budget) * 100;
   const remaining = budget.budget - budget.spent;
@@ -53,6 +54,15 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
 
   const handleViewTransactions = () => {
     router.push(`/transactions?budgetId=${budget.id}&category=${encodeURIComponent(budget.category)}`);
+  };
+
+  const handleDeleteBudget = async () => {
+    try {
+      await deleteBudget(budget.id);
+      setIsDeleteConfirmOpen(false);
+    } catch (error) {
+      console.error('Error deleting budget:', error);
+    }
   };
 
   return (
@@ -153,6 +163,10 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
             <i className="ri-history-line mr-2"></i>
             History
           </button>
+          <button onClick={() => setIsDeleteConfirmOpen(true)} className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap cursor-pointer btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">
+            <i className="ri-delete-bin-line mr-2"></i>
+            Delete
+          </button>
         </div>
 
         {/* Detailed View */}
@@ -200,6 +214,37 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
           await refreshBudgets();
         }}
       />
+      
+      {/* Delete Confirmation Modal */}
+      {isDeleteConfirmOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                <i className="ri-delete-bin-line text-red-600 text-lg"></i>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Delete Budget</h3>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete the "{budget.category}" budget? This action cannot be undone.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setIsDeleteConfirmOpen(false)}
+                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteBudget}
+                className="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

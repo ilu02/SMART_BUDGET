@@ -453,7 +453,11 @@ export default function CategoriesPage() {
             <h1 className="text-3xl font-bold text-gray-900">Budget Categories</h1>
             <p className="text-gray-600 mt-2">Manage your spending categories and budgets</p>
           </div>
-          <Button onClick={() => setIsAddModalOpen(true)}>
+          <Button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+            style={{ minWidth: '150px', minHeight: '40px' }}
+          >
             <i className="ri-add-line mr-2" aria-hidden="true"></i>
             Add Category
           </Button>

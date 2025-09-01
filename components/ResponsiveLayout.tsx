@@ -80,14 +80,7 @@ export default function ResponsiveLayout({ children, className = '' }: Responsiv
     >
       {children}
       
-      {/* Debug info in development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 left-4 bg-black/80 text-white text-xs p-2 rounded-lg font-mono z-50 backdrop-blur-sm">
-          <div>Size: {screenSize}</div>
-          <div>Orientation: {orientation}</div>
-          <div>Dimensions: {dimensions.width}×{dimensions.height}</div>
-        </div>
-      )}
+
     </div>
   );
 }

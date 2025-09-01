@@ -1,6 +1,17 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Budget } from '../contexts/BudgetContext';
+import { useAuth } from '../contexts/AuthContext';
+
+interface Transaction {
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  type: string;
+  category: string;
+}
 
 interface HistoryModalProps {
   isOpen: boolean;
@@ -8,14 +19,37 @@ interface HistoryModalProps {
   budget: Budget;
 }
 
-const transactionHistory = [
-  { id: 1, date: '2023-10-26', description: 'Grocery Store', amount: -75.50 },
-  { id: 2, date: '2023-10-24', description: 'Restaurant', amount: -42.00 },
-  { id: 3, date: '2023-10-22', description: 'Coffee Shop', amount: -5.25 },
-  { id: 4, date: '2023-10-20', description: 'Food Delivery', amount: -25.00 },
-];
-
 export default function HistoryModal({ isOpen, onClose, budget }: HistoryModalProps) {
+  const { user } = useAuth();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && budget && user) {
+      fetchTransactions();
+    }
+  }, [isOpen, budget, user]);
+
+  const fetchTransactions = async () => {
+    if (!user?.id || !budget.id) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/transactions?userId=${user.id}&budgetId=${budget.id}`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        setTransactions(data.transactions || []);
+      } else {
+        console.error('Failed to fetch transactions:', data.error);
+      }
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -27,17 +61,31 @@ export default function HistoryModal({ isOpen, onClose, budget }: HistoryModalPr
         </p>
 
         <div className="space-y-4 max-h-96 overflow-y-auto">
-          {transactionHistory.map(tx => (
-            <div key={tx.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div>
-                <p className="font-medium text-gray-800">{tx.description}</p>
-                <p className="text-sm text-gray-500">{tx.date}</p>
-              </div>
-              <p className={`font-medium ${tx.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                ${tx.amount.toFixed(2)}
-              </p>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-2 text-gray-600">Loading transactions...</span>
             </div>
-          ))}
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-8">
+              <i className="ri-file-list-line text-4xl text-gray-400 mb-2"></i>
+              <p className="text-gray-500">No transactions found for this category.</p>
+            </div>
+          ) : (
+            transactions.map(tx => (
+              <div key={tx.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium text-gray-800">{tx.description}</p>
+                  <p className="text-sm text-gray-500">
+                    {new Date(tx.date).toLocaleDateString()}
+                  </p>
+                </div>
+                <p className={`font-medium ${tx.type === 'expense' ? 'text-red-600' : 'text-green-600'}`}>
+                  {tx.type === 'expense' ? '-' : '+'}${Math.abs(tx.amount).toFixed(2)}
+                </p>
+              </div>
+            ))
+          )}
         </div>
 
         <div className="mt-8 flex justify-end">

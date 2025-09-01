@@ -40,7 +40,7 @@ export async function POST(request) {
       );
     }
 
-    if (!budgetData.category || !budgetData.budget || !budgetData.icon || !budgetData.color) {
+    if (!budgetData.category || budgetData.budget === undefined || budgetData.budget === null || !budgetData.icon || !budgetData.color) {
       return NextResponse.json(
         { error: 'Category, budget, icon, and color are required' },
         { status: 400 }

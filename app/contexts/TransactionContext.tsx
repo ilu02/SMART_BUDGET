@@ -39,6 +39,7 @@ interface TransactionContextType {
   refreshTransactions: () => Promise<void>;
   loadTransactionsByBudget: (budgetId: string) => Promise<void>;
   checkBudgetsExist: () => Promise<boolean>;
+  setBudgetRefreshCallback: (callback: () => Promise<void>) => void;
 }
 
 
@@ -62,7 +63,12 @@ const TransactionContext = createContext<TransactionContextType | undefined>(und
 export function TransactionProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [budgetRefreshCallback, setBudgetRefreshCallbackState] = useState<(() => Promise<void>) | null>(null);
   const { user, isAuthenticated } = useAuth();
+
+  const setBudgetRefreshCallback = useCallback((callback: () => Promise<void>) => {
+    setBudgetRefreshCallbackState(() => callback);
+  }, []);
 
   // Load transactions from database when user is authenticated
   const loadTransactions = useCallback(async () => {
@@ -171,6 +177,12 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
           color: categoryMapping[data.transaction.category]?.color || 'text-gray-600 bg-gray-50'
         };
         setTransactions(prev => [newTransaction, ...prev]);
+        
+        // Refresh budgets if callback is set and this is an expense
+        if (budgetRefreshCallback && transactionData.type === 'expense') {
+          await budgetRefreshCallback();
+        }
+        
         toast.success('Transaction added successfully!');
         return true;
       } else {
@@ -218,6 +230,12 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
           }
           return transaction;
         }));
+        
+        // Refresh budgets if callback is set and this affects expenses
+        if (budgetRefreshCallback && (updates.amount !== undefined || updates.budgetId !== undefined)) {
+          await budgetRefreshCallback();
+        }
+        
         toast.success('Transaction updated successfully!');
       } else {
         toast.error(data.error || 'Failed to update transaction');
@@ -244,6 +262,12 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
       if (response.ok && data.success) {
         // Update local state
         setTransactions(prev => prev.filter(transaction => transaction.id !== id));
+        
+        // Refresh budgets if callback is set
+        if (budgetRefreshCallback) {
+          await budgetRefreshCallback();
+        }
+        
         toast.success('Transaction deleted successfully!');
       } else {
         toast.error(data.error || 'Failed to delete transaction');
@@ -374,7 +398,8 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
         loading,
         refreshTransactions,
         loadTransactionsByBudget,
-        checkBudgetsExist
+        checkBudgetsExist,
+        setBudgetRefreshCallback
       }}
     >
       {children}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Budget } from '../contexts/BudgetContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface Transaction {
   id: string;
@@ -21,6 +22,7 @@ interface HistoryModalProps {
 
 export default function HistoryModal({ isOpen, onClose, budget }: HistoryModalProps) {
   const { user } = useAuth();
+  const { formatCurrency } = useSettings();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -81,7 +83,7 @@ export default function HistoryModal({ isOpen, onClose, budget }: HistoryModalPr
                   </p>
                 </div>
                 <p className={`font-medium ${tx.type === 'expense' ? 'text-red-600' : 'text-green-600'}`}>
-                  {tx.type === 'expense' ? '-' : '+'}${Math.abs(tx.amount).toFixed(2)}
+                  {tx.type === 'expense' ? '-' : '+'}{formatCurrency(Math.abs(tx.amount))}
                 </p>
               </div>
             ))

@@ -5,6 +5,7 @@ import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Alert } from './ui/Alert';
 import { useSettings } from '../app/contexts/SettingsContext';
+import { useBudgets } from '../app/contexts/BudgetContext';
 import toast from 'react-hot-toast';
 
 interface SpendingAlert {
@@ -19,56 +20,18 @@ interface SpendingAlert {
   color: string;
 }
 
-interface BudgetData {
-  category: string;
-  budget: number;
-  spent: number;
-  icon: string;
-  color: string;
-}
-
-const budgetData: BudgetData[] = [
-  {
-    category: 'Food & Dining',
-    budget: 800,
-    spent: 720, // 90% - should trigger warning
-    icon: 'ri-restaurant-line',
-    color: 'bg-blue-500'
-  },
-  {
-    category: 'Transportation',
-    budget: 400,
-    spent: 420, // 105% - should trigger danger
-    icon: 'ri-gas-station-line',
-    color: 'bg-teal-500'
-  },
-  {
-    category: 'Entertainment',
-    budget: 200,
-    spent: 178, // 89% - should trigger info
-    icon: 'ri-film-line',
-    color: 'bg-pink-500'
-  },
-  {
-    category: 'Shopping',
-    budget: 600,
-    spent: 580, // 97% - should trigger warning
-    icon: 'ri-shopping-bag-line',
-    color: 'bg-red-500'
-  }
-];
-
 export default function SpendingAlerts() {
   const { formatCurrency, budgetPreferences } = useSettings();
+  const { budgets } = useBudgets();
   const [alerts, setAlerts] = useState<SpendingAlert[]>([]);
   const [dismissedAlerts, setDismissedAlerts] = useState<number[]>([]);
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
-    // Generate alerts based on budget data
+    // Generate alerts based on real budget data
     const generatedAlerts: SpendingAlert[] = [];
 
-    budgetData.forEach((budget, index) => {
+    budgets.forEach((budget, index) => {
       const percentage = (budget.spent / budget.budget) * 100;
       let alert: SpendingAlert | null = null;
 
@@ -82,7 +45,7 @@ export default function SpendingAlerts() {
           type: 'danger',
           message: `You've exceeded your ${budget.category} budget by ${formatCurrency(budget.spent - budget.budget)}`,
           icon: budget.icon,
-          color: budget.color
+          color: `bg-${budget.color.split('-')[0]}-500`
         };
       } else if (percentage >= budgetPreferences.warningThreshold) {
         alert = {
@@ -94,7 +57,7 @@ export default function SpendingAlerts() {
           type: 'warning',
           message: `You're close to your ${budget.category} budget limit (${percentage.toFixed(1)}% used)`,
           icon: budget.icon,
-          color: budget.color
+          color: `bg-${budget.color.split('-')[0]}-500`
         };
       } else if (percentage >= (budgetPreferences.warningThreshold - 15)) {
         alert = {
@@ -106,7 +69,7 @@ export default function SpendingAlerts() {
           type: 'info',
           message: `You've used ${percentage.toFixed(1)}% of your ${budget.category} budget`,
           icon: budget.icon,
-          color: budget.color
+          color: `bg-${budget.color.split('-')[0]}-500`
         };
       }
 
@@ -116,7 +79,7 @@ export default function SpendingAlerts() {
     });
 
     setAlerts(generatedAlerts);
-  }, [formatCurrency, budgetPreferences.warningThreshold]);
+  }, [budgets, formatCurrency, budgetPreferences.warningThreshold]);
 
   const handleDismissAlert = (alertId: number) => {
     setDismissedAlerts(prev => [...prev, alertId]);

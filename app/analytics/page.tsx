@@ -1,32 +1,66 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import Header from '../../components/Header';
 import { Card } from '@/components/ui/Card';
 import AnalyticsCharts from './AnalyticsCharts';
 import { useTransactions } from '../contexts/TransactionContext';
 import { useSettings } from '../contexts/SettingsContext';
 
+type DateRange = 'day' | 'week' | 'month' | 'year';
+
 export default function AnalyticsPage() {
+  const [selectedRange, setSelectedRange] = useState<DateRange>('month');
   const { transactions, getTotalIncome, getTotalExpenses, getNetIncome } = useTransactions();
   const { formatCurrency } = useSettings();
 
-  const totalIncome = getTotalIncome();
-  const totalExpenses = getTotalExpenses();
-  const netIncome = getNetIncome();
+  // Filter transactions based on selected date range
+  const filteredTransactions = useMemo(() => {
+    const now = new Date();
+    const startDate = new Date();
+    
+    switch (selectedRange) {
+      case 'day':
+        startDate.setHours(startDate.getHours() - 24);
+        break;
+      case 'week':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case 'month':
+        startDate.setMonth(startDate.getMonth() - 12);
+        break;
+      case 'year':
+        startDate.setFullYear(startDate.getFullYear() - 5);
+        break;
+    }
+    
+    return transactions.filter(t => new Date(t.date) >= startDate);
+  }, [transactions, selectedRange]);
+
+  // Calculate stats based on filtered transactions
+  const totalIncome = filteredTransactions
+    .filter(t => t.amount > 0)
+    .reduce((sum, t) => sum + t.amount, 0);
+    
+  const totalExpenses = Math.abs(filteredTransactions
+    .filter(t => t.amount < 0)
+    .reduce((sum, t) => sum + t.amount, 0));
+    
+  const netIncome = totalIncome - totalExpenses;
   const savingsRate = totalIncome > 0 ? (netIncome / totalIncome) * 100 : 0;
 
   // Calculate some quick stats
-  const averageTransaction = transactions.length > 0 
-    ? transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0) / transactions.length 
+  const averageTransaction = filteredTransactions.length > 0 
+    ? filteredTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0) / filteredTransactions.length 
     : 0;
 
   const largestExpense = Math.max(
-    ...transactions.filter(t => t.amount < 0).map(t => Math.abs(t.amount)), 
+    ...filteredTransactions.filter(t => t.amount < 0).map(t => Math.abs(t.amount)), 
     0
   );
 
-  const mostActiveCategory = transactions.length > 0 
-    ? transactions
+  const mostActiveCategory = filteredTransactions.length > 0 
+    ? filteredTransactions
         .reduce((acc, t) => {
           acc[t.category] = (acc[t.category] || 0) + 1;
           return acc;
@@ -42,10 +76,77 @@ export default function AnalyticsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
-          <p className="text-gray-600 mt-2">
-            Detailed insights into your spending patterns and financial trends
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
+              <p className="text-gray-600 mt-2">
+                Detailed insights into your spending patterns and financial trends
+              </p>
+            </div>
+            
+            {/* Date Range Selector */}
+            <div className="flex flex-col sm:flex-row sm:items-center mt-4 sm:mt-0 space-y-3 sm:space-y-0">
+              <div className="flex items-center space-x-2 sm:mr-4">
+                <i className="ri-calendar-line text-gray-500"></i>
+                <span className="text-sm font-medium text-gray-700">Time Period:</span>
+              </div>
+              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1 overflow-x-auto">
+                {([
+                  { key: 'day', label: '24H', icon: 'ri-time-line', tooltip: 'Last 24 hours' },
+                  { key: 'week', label: '7D', icon: 'ri-calendar-week-line', tooltip: 'Last 7 days' },
+                  { key: 'month', label: '12M', icon: 'ri-calendar-line', tooltip: 'Last 12 months' },
+                  { key: 'year', label: '5Y', icon: 'ri-calendar-event-line', tooltip: 'Last 5 years' }
+                ] as { key: DateRange; label: string; icon: string; tooltip: string }[]).map((range) => (
+                  <button
+                    key={range.key}
+                    onClick={() => setSelectedRange(range.key)}
+                    title={range.tooltip}
+                    className={`flex items-center space-x-1.5 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                      selectedRange === range.key
+                        ? 'bg-white text-blue-700 shadow-sm border border-blue-200'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
+                    <i className={`${range.icon} text-sm`}></i>
+                    <span>{range.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Period Summary */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-8 border border-blue-100">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Period Overview - {
+                selectedRange === 'day' ? 'Last 24 Hours' : 
+                selectedRange === 'week' ? 'Last 7 Days' : 
+                selectedRange === 'month' ? 'Last 12 Months' : 
+                'Last 5 Years'
+              }
+            </h2>
+            <div className="text-sm text-gray-600">
+              {filteredTransactions.length} transactions
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</p>
+              <p className="text-sm text-gray-600">Total Income</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</p>
+              <p className="text-sm text-gray-600">Total Expenses</p>
+            </div>
+            <div className="text-center">
+              <p className={`text-2xl font-bold ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatCurrency(netIncome)}
+              </p>
+              <p className="text-sm text-gray-600">Net Income</p>
+            </div>
+          </div>
         </div>
 
         {/* Summary Stats */}
@@ -120,7 +221,7 @@ export default function AnalyticsPage() {
               {formatCurrency(totalIncome)}
             </p>
             <p className="text-sm text-gray-500">
-              From {transactions.filter(t => t.amount > 0).length} income transactions
+              From {filteredTransactions.filter(t => t.amount > 0).length} income transactions
             </p>
           </Card>
 
@@ -135,7 +236,7 @@ export default function AnalyticsPage() {
               {formatCurrency(totalExpenses)}
             </p>
             <p className="text-sm text-gray-500">
-              From {transactions.filter(t => t.amount < 0).length} expense transactions
+              From {filteredTransactions.filter(t => t.amount < 0).length} expense transactions
             </p>
           </Card>
 
@@ -164,7 +265,10 @@ export default function AnalyticsPage() {
         {/* Charts Section */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Financial Insights</h2>
-          <AnalyticsCharts />
+          <AnalyticsCharts 
+            transactions={filteredTransactions} 
+            selectedRange={selectedRange}
+          />
         </div>
 
         {/* Insights and Recommendations */}
@@ -194,15 +298,15 @@ export default function AnalyticsPage() {
 
               <div className="flex items-start space-x-3">
                 <div className={`w-2 h-2 rounded-full mt-2 ${
-                  transactions.length >= 50 ? 'bg-green-500' : 'bg-yellow-500'
+                  filteredTransactions.length >= 20 ? 'bg-green-500' : 'bg-yellow-500'
                 }`}></div>
                 <div>
                   <p className="font-medium text-gray-900">Transaction Volume</p>
                   <p className="text-sm text-gray-600">
-                    You have {transactions.length} transactions recorded. 
-                    {transactions.length >= 50 
+                    You have {filteredTransactions.length} transactions in the selected period. 
+                    {filteredTransactions.length >= 20 
                       ? ' Great data for accurate insights!'
-                      : ' Add more transactions for better analytics.'
+                      : ' More transactions would provide better analytics.'
                     }
                   </p>
                 </div>

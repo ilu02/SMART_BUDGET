@@ -131,18 +131,53 @@ export default function ProfileSettings() {
     setOriginalProfile(null);
   };
 
-  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // In a real app, you would upload this to a server
-      // For now, we'll just create a local URL
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        updateProfile({ profilePicture: result });
-        toast.success('Profile picture updated!');
-      };
-      reader.readAsDataURL(file);
+    if (!file || !user?.id) {
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.');
+      return;
+    }
+
+    // Check file size (1MB limit)
+    if (file.size > 1024 * 1024) {
+      toast.error('File size too large. Maximum size is 1MB.');
+      return;
+    }
+
+    try {
+      // Show loading state
+      const loadingToast = toast.loading('Uploading profile picture...');
+
+      // Create form data
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('userId', user.id);
+      formData.append('type', 'avatar');
+
+      // Upload file
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Update profile with the new image URL
+        updateProfile({ profilePicture: data.url });
+        toast.success('Profile picture updated!', { id: loadingToast });
+      } else {
+        toast.error(data.error || 'Failed to upload profile picture', { id: loadingToast });
+      }
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      toast.error('Failed to upload profile picture. Please try again.');
     }
   };
 

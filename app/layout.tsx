@@ -1,6 +1,7 @@
 import { SettingsProvider } from "./contexts/SettingsContext";
 import { TransactionProvider } from "./contexts/TransactionContext";
 import { BudgetProvider } from "./contexts/BudgetContext";
+import { BudgetTransactionSync } from "./contexts/BudgetTransactionSync";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import "./globals.css";
@@ -41,7 +42,8 @@ export default function RootLayout({
           <SettingsProvider>
             <BudgetProvider>
               <TransactionProvider>
-                <NotificationProvider>
+                <BudgetTransactionSync>
+                  <NotificationProvider>
                   <ThemeWrapper>
                 <Toaster
                   position="top-right"
@@ -54,7 +56,8 @@ export default function RootLayout({
                 />
                     {children}
                   </ThemeWrapper>
-                </NotificationProvider>
+                  </NotificationProvider>
+                </BudgetTransactionSync>
               </TransactionProvider>
             </BudgetProvider>
           </SettingsProvider>

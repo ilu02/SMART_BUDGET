@@ -1,7 +1,7 @@
 {
   "/dashboard/page": "app/dashboard/page.js",
-  "/analytics/page": "app/analytics/page.js",
   "/api/transactions/route": "app/api/transactions/route.js",
   "/api/budgets/route": "app/api/budgets/route.js",
-  "/_not-found/page": "app/_not-found/page.js"
+  "/analytics/page": "app/analytics/page.js",
+  "/settings/page": "app/settings/page.js"
 }

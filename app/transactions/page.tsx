@@ -52,7 +52,7 @@ export default function TransactionsPage() {
   const [amountRange, setAmountRange] = useState({ min: '', max: '' });
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [selectedTransactions, setSelectedTransactions] = useState<number[]>([]);
+  const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>();
 
@@ -86,8 +86,8 @@ export default function TransactionsPage() {
       // Search filter
       const matchesSearch = searchTerm === '' || 
         transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.merchant.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+        (transaction.merchant && transaction.merchant.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (transaction.tags && transaction.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
 
       // Category filter
       const matchesCategory = selectedCategory === 'All Categories' || 
@@ -147,7 +147,7 @@ export default function TransactionsPage() {
     return filtered;
   }, [transactions, searchTerm, selectedCategory, dateRange, amountRange, sortBy, sortOrder]);
 
-  const handleSelectTransaction = (id: number) => {
+  const handleSelectTransaction = (id: string) => {
     setSelectedTransactions(prev => 
       prev.includes(id) 
         ? prev.filter(t => t !== id)
@@ -314,6 +314,8 @@ export default function TransactionsPage() {
           <Card className="p-6 mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
             {(() => {
               const budget = budgets.find(b => b.id === selectedBudgetId);
+              if (!budget) return null;
+              
               const budgetTransactions = filteredAndSortedTransactions.filter(t => t.budgetId === selectedBudgetId);
               const spent = budgetTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
               const remaining = budget.budget - spent;
@@ -706,8 +708,8 @@ export default function TransactionsPage() {
         onClose={handleCloseModal}
         transaction={editingTransaction}
         onSave={handleSaveTransaction}
-        defaultBudgetId={selectedBudgetId}
-        defaultCategory={budgetCategoryName}
+        defaultBudgetId={selectedBudgetId || undefined}
+        defaultCategory={budgetCategoryName || undefined}
       />
     </div>
   );

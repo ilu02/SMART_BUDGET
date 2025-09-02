@@ -27,23 +27,23 @@ export default function RecentTransactions() {
 
   if (loading) {
     return (
-      <Card className="p-8 bg-gradient-to-br from-white to-gray-50/50 border-0 shadow-xl">
-        <div className="flex items-center justify-between mb-8">
-          <Skeleton className="h-7 w-48" />
-          <Skeleton className="h-6 w-20" />
+      <Card className="p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-white to-gray-50/50 border-0 shadow-xl h-fit max-h-[calc(100vh-12rem)] flex flex-col">
+        <div className="flex items-center justify-between mb-6 flex-shrink-0">
+          <Skeleton className="h-6 sm:h-7 w-32 sm:w-48" />
+          <Skeleton className="h-6 w-16 sm:w-20" />
         </div>
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4 flex-1">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="flex items-center justify-between p-4">
-              <div className="flex items-center space-x-4">
-                <Skeleton className="w-12 h-12 rounded-xl" />
-                <div>
-                  <Skeleton className="h-4 w-36 mb-2" />
-                  <Skeleton className="h-3 w-28" />
+            <div key={i} className="flex items-center justify-between p-3 sm:p-4">
+              <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+                <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <Skeleton className="h-4 w-24 sm:w-36 mb-2" />
+                  <Skeleton className="h-3 w-20 sm:w-28" />
                 </div>
               </div>
-              <div className="text-right">
-                <Skeleton className="h-5 w-20" />
+              <div className="text-right flex-shrink-0">
+                <Skeleton className="h-4 sm:h-5 w-16 sm:w-20" />
               </div>
             </div>
           ))}
@@ -54,22 +54,23 @@ export default function RecentTransactions() {
 
   if (recentTransactions.length === 0) {
     return (
-      <Card className="p-8 bg-gradient-to-br from-white to-gray-50/50 border-0 shadow-xl">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">Recent Transactions</h2>
+      <Card className="p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-white to-gray-50/50 border-0 shadow-xl h-fit flex flex-col">
+        <div className="flex items-center justify-between mb-6 flex-shrink-0">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Recent Transactions</h2>
         </div>
-        <div className="text-center py-12">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <i className="ri-exchange-line text-3xl text-blue-600" aria-hidden="true"></i>
+        <div className="text-center py-8 sm:py-12 flex-1">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
+            <i className="ri-exchange-line text-2xl sm:text-3xl text-blue-600" aria-hidden="true"></i>
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-3">No transactions yet</h3>
-          <p className="text-gray-600 mb-6 max-w-sm mx-auto">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">No transactions yet</h3>
+          <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 max-w-sm mx-auto px-4">
             Start tracking your expenses by adding your first transaction and get insights into your spending.
           </p>
           <Link href="/transactions">
             <Button size="lg" className="shadow-lg hover:shadow-xl">
               <i className="ri-add-line mr-2" aria-hidden="true"></i>
-              Add Your First Transaction
+              <span className="hidden sm:inline">Add Your First Transaction</span>
+              <span className="sm:hidden">Add Transaction</span>
             </Button>
           </Link>
         </div>
@@ -87,56 +88,60 @@ export default function RecentTransactions() {
     .reduce((sum, t) => sum + t.amount, 0));
 
   return (
-    <Card className="p-8 bg-gradient-to-br from-white to-gray-50/50 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Recent Transactions</h2>
-          <p className="text-gray-600">Your latest financial activity</p>
+    <Card className="p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-white to-gray-50/50 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 h-fit max-h-[calc(100vh-12rem)] flex flex-col">
+      <div className="flex items-center justify-between mb-6 flex-shrink-0">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2 truncate">Recent Transactions</h2>
+          <p className="text-sm sm:text-base text-gray-600 hidden sm:block">Your latest financial activity</p>
         </div>
-        <Link href="/transactions">
+        <Link href="/transactions" className="flex-shrink-0 ml-4">
           <Button variant="outline" size="sm" className="hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700">
             <i className="ri-arrow-right-line mr-2" aria-hidden="true"></i>
-            View All
+            <span className="hidden sm:inline">View All</span>
+            <span className="sm:hidden">All</span>
           </Button>
         </Link>
       </div>
 
-      <div className="space-y-2">
-        {recentTransactions.map((transaction) => (
-          <TransactionItem 
-            key={transaction.id} 
-            transaction={transaction}
-            onClick={() => {
-              // Handle transaction click
-              console.log('Transaction clicked:', transaction.id);
-            }}
-          />
-        ))}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="space-y-2 max-h-96 overflow-y-auto pr-2 -mr-2">
+          {recentTransactions.map((transaction) => (
+            <TransactionItem 
+              key={transaction.id} 
+              transaction={transaction}
+              onClick={() => {
+                // Handle transaction click
+                console.log('Transaction clicked:', transaction.id);
+              }}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Weekly Summary */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6">
-          <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+      <div className="mt-6 pt-4 sm:pt-6 border-t border-gray-200 flex-shrink-0">
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 sm:p-6">
+          <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
             <i className="ri-calendar-week-line mr-2 text-blue-600" aria-hidden="true"></i>
-            This Week Summary
+            <span className="hidden sm:inline">This Week Summary</span>
+            <span className="sm:hidden">This Week</span>
           </h4>
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4 sm:gap-6">
             <div className="text-center">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <i className="ri-arrow-up-line text-green-600 text-lg" aria-hidden="true"></i>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-2 sm:mb-3">
+                <i className="ri-arrow-up-line text-green-600 text-base sm:text-lg" aria-hidden="true"></i>
               </div>
-              <p className="text-sm text-gray-600 mb-1">Income</p>
-              <p className="font-bold text-xl text-green-600">
+              <p className="text-xs sm:text-sm text-gray-600 mb-1">Income</p>
+              <p className="font-bold text-lg sm:text-xl text-green-600 truncate">
                 +{formatCurrency(weeklyIncome)}
               </p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <i className="ri-arrow-down-line text-red-600 text-lg" aria-hidden="true"></i>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-xl flex items-center justify-center mx-auto mb-2 sm:mb-3">
+                <i className="ri-arrow-down-line text-red-600 text-base sm:text-lg" aria-hidden="true"></i>
               </div>
-              <p className="text-sm text-gray-600 mb-1">Expenses</p>
-              <p className="font-bold text-xl text-red-600">
+              <p className="text-xs sm:text-sm text-gray-600 mb-1">Expenses</p>
+              <p className="font-bold text-lg sm:text-xl text-red-600 truncate">
                 -{formatCurrency(weeklyExpenses)}
               </p>
             </div>

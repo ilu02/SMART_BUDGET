@@ -41,15 +41,31 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
   const isNearLimit = percentage > 80 && percentage <= 100;
 
   const getStatusColor = () => {
-    if (isOverBudget) return 'text-red-600';
-    if (isNearLimit) return 'text-yellow-600';
+    if (percentage > 100) return 'text-red-600';
+    if (percentage > 90) return 'text-red-500';
+    if (percentage > 80) return 'text-yellow-600';
+    if (percentage > 70) return 'text-yellow-500';
+    if (percentage > 60) return 'text-orange-500';
     return 'text-green-600';
   };
 
   const getProgressBarColor = () => {
-    if (isOverBudget) return 'bg-red-500';
-    if (isNearLimit) return 'bg-yellow-500';
+    if (percentage > 100) return 'bg-red-500';
+    if (percentage > 90) return 'bg-red-400';
+    if (percentage > 80) return 'bg-yellow-500';
+    if (percentage > 70) return 'bg-yellow-400';
+    if (percentage > 60) return 'bg-orange-400';
     return budget.color;
+  };
+
+  const getProgressBarGradient = () => {
+    if (percentage > 100) return 'bg-gradient-to-r from-red-500 to-red-600';
+    if (percentage > 90) return 'bg-gradient-to-r from-red-400 to-red-500';
+    if (percentage > 80) return 'bg-gradient-to-r from-yellow-400 to-red-400';
+    if (percentage > 70) return 'bg-gradient-to-r from-yellow-400 to-yellow-500';
+    if (percentage > 60) return 'bg-gradient-to-r from-orange-400 to-yellow-400';
+    if (percentage > 40) return 'bg-gradient-to-r from-green-400 to-orange-400';
+    return `bg-gradient-to-r from-green-400 to-green-500`;
   };
 
   const handleViewTransactions = () => {
@@ -106,37 +122,78 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
 
         {/* Progress Bar */}
         <div className="mb-4">
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
+          <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
             <div 
-              className={`h-2.5 rounded-full ${getProgressBarColor()}`}
-              style={{ width: `${Math.min(percentage, 100)}%` }}
+              className={`h-3 rounded-full transition-all duration-500 ease-in-out ${getProgressBarGradient()} shadow-sm`}
+              style={{ 
+                width: `${Math.min(percentage, 100)}%`,
+                boxShadow: percentage > 80 ? '0 0 8px rgba(239, 68, 68, 0.3)' : '0 0 4px rgba(0, 0, 0, 0.1)'
+              }}
               role="progressbar"
               aria-valuenow={Math.min(percentage, 100)}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label={`${budget.category} budget usage`}
-            ></div>
+              aria-label={`${budget.category} budget usage: ${percentage.toFixed(1)}%`}
+            >
+              {/* Animated shine effect for progress bar */}
+              <div className="h-full w-full rounded-full bg-gradient-to-r from-transparent via-white to-transparent opacity-20 animate-pulse"></div>
+            </div>
+            {/* Overflow indicator for over-budget */}
+            {isOverBudget && (
+              <div 
+                className="h-3 bg-red-600 rounded-r-full border-2 border-red-700 animate-pulse"
+                style={{ 
+                  width: `${Math.min(percentage - 100, 20)}%`,
+                  marginTop: '-12px',
+                  marginLeft: '100%'
+                }}
+              ></div>
+            )}
+          </div>
+          {/* Progress indicators */}
+          <div className="flex justify-between mt-1 text-xs text-gray-400">
+            <span>0%</span>
+            <span className="text-yellow-500">80%</span>
+            <span className="text-red-500">100%</span>
           </div>
         </div>
 
         {/* Status Message */}
         <div className="mb-4">
-          {isOverBudget && (
-            <div className="flex items-center space-x-2 text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+          {percentage > 100 && (
+            <div className="flex items-center space-x-2 text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-200 animate-pulse">
               <i className="ri-alert-line"></i>
               <span className="text-sm font-medium">Over budget by {formatCurrency(budget.spent - budget.budget)}</span>
             </div>
           )}
-          {isNearLimit && !isOverBudget && (
-            <div className="flex items-center space-x-2 text-yellow-600 bg-yellow-50 px-3 py-2 rounded-lg">
-              <i className="ri-warning-line"></i>
-              <span className="text-sm font-medium">Approaching budget limit</span>
+          {percentage > 90 && percentage <= 100 && (
+            <div className="flex items-center space-x-2 text-red-500 bg-red-50 px-3 py-2 rounded-lg border border-red-200">
+              <i className="ri-error-warning-line"></i>
+              <span className="text-sm font-medium">Critical: {(100 - percentage).toFixed(1)}% budget remaining</span>
             </div>
           )}
-          {!isNearLimit && !isOverBudget && (
-            <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded-lg">
+          {percentage > 80 && percentage <= 90 && (
+            <div className="flex items-center space-x-2 text-yellow-600 bg-yellow-50 px-3 py-2 rounded-lg border border-yellow-200">
+              <i className="ri-warning-line"></i>
+              <span className="text-sm font-medium">Warning: {(100 - percentage).toFixed(1)}% budget remaining</span>
+            </div>
+          )}
+          {percentage > 70 && percentage <= 80 && (
+            <div className="flex items-center space-x-2 text-yellow-500 bg-yellow-50 px-3 py-2 rounded-lg border border-yellow-200">
+              <i className="ri-information-line"></i>
+              <span className="text-sm font-medium">Caution: {(100 - percentage).toFixed(1)}% budget remaining</span>
+            </div>
+          )}
+          {percentage > 60 && percentage <= 70 && (
+            <div className="flex items-center space-x-2 text-orange-500 bg-orange-50 px-3 py-2 rounded-lg border border-orange-200">
+              <i className="ri-time-line"></i>
+              <span className="text-sm font-medium">Monitor: {(100 - percentage).toFixed(1)}% budget remaining</span>
+            </div>
+          )}
+          {percentage <= 60 && (
+            <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
               <i className="ri-check-line"></i>
-              <span className="text-sm font-medium">On track</span>
+              <span className="text-sm font-medium">On track: {(100 - percentage).toFixed(1)}% budget remaining</span>
             </div>
           )}
         </div>

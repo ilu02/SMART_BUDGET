@@ -109,16 +109,6 @@ This project uses PostgreSQL with Prisma ORM for data management. Choose one of 
    DATABASE_URL="postgresql://budget_user:your_secure_password@localhost:5432/smart_budget_db"
    ```
 
-#### Option B: Cloud Database (Recommended for Production)
-
-Use services like:
-- [Supabase](https://supabase.com/) (Free tier available)
-- [Railway](https://railway.app/) (Free tier available)
-- [Neon](https://neon.tech/) (Free tier available)
-- [AWS RDS](https://aws.amazon.com/rds/)
-
-Copy the connection string provided by your cloud service to your `.env.local` file.
-
 ### 5. Database Migration & Setup
 
 Run Prisma migrations to set up the database schema:

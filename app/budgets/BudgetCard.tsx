@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -24,9 +23,11 @@ interface Budget {
 
 interface BudgetCardProps {
   budget: Budget;
+  onEdit: () => void;
+  onSave: (id: string, newBudget: number) => void; // Added onSave to the interface
 }
 
-export default function BudgetCard({ budget }: BudgetCardProps) {
+export default function BudgetCard({ budget, onEdit, onSave }: BudgetCardProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -63,6 +64,11 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
     } catch (error) {
       console.error('Error deleting budget:', error);
     }
+  };
+
+  const handleEditClick = () => {
+    setIsEditModalOpen(true);
+    // You can also call the onEdit prop if needed, e.g., onEdit();
   };
 
   return (
@@ -155,7 +161,7 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
 
         {/* Secondary Action Buttons */}
         <div className="flex space-x-2 mt-2">
-          <button onClick={() => setIsEditModalOpen(true)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap cursor-pointer btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+          <button onClick={handleEditClick} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap cursor-pointer btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
             <i className="ri-edit-line mr-2"></i>
             Edit
           </button>
@@ -197,6 +203,7 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         budget={budget}
+        onSave={onSave} // Pass the onSave prop from here
       />
       <HistoryModal
         isOpen={isHistoryModalOpen}

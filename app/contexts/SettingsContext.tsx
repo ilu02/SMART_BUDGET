@@ -45,6 +45,8 @@ export interface ProfileSettings {
   language: string;
   currency: string;
   profilePicture?: string;
+  currencySymbol?: string;
+  currencyCode?: string;
 }
 
 interface BudgetPreferences {
@@ -74,6 +76,7 @@ interface SettingsContextType {
   updateProfile: (settings: Partial<ProfileSettings>) => void;
   resetSettings: () => void;
   formatCurrency: (amount: number) => string;
+  getCurrencySymbol: () => string; // Add this to the interface
   clearUserSettings: () => void;
 }
 
@@ -111,7 +114,9 @@ const defaultProfile: ProfileSettings = {
   timezone: 'Eastern Time',
   language: 'English',
   currency: 'USD - US Dollar ($)',
-  profilePicture: undefined
+  profilePicture: undefined,
+  currencySymbol: '$', // Corrected line
+  currencyCode: 'USD' // Corrected line
 };
 
 const defaultBudgetPreferences: BudgetPreferences = {
@@ -263,6 +268,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return amount < 0 ? `-${formattedAmount}` : formattedAmount;
   };
 
+  // Add this function to return the currency symbol based on budget preferences
+  const getCurrencySymbol = (): string => {
+    return budgetPreferences.currencySymbol;
+  };
+
   const updateAppearance = (settings: Partial<AppearanceSettings>) => {
     setAppearance(prev => ({ ...prev, ...settings }));
   };
@@ -331,6 +341,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         updateProfile,
         resetSettings,
         formatCurrency,
+        getCurrencySymbol, // Make sure to add it here
         clearUserSettings
       }}
     >

@@ -34,6 +34,8 @@ export default function ProfileSettings() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
+    // Update the profile based on the input change
     updateProfile({ [name]: value });
     
     // If currency is changed, also update budget preferences
@@ -52,7 +54,14 @@ export default function ProfileSettings() {
       if (selectedCurrency) {
         updateBudgetPreferences({
           currency: selectedCurrency.code,
-          currencySymbol: selectedCurrency.symbol
+          currencySymbol: selectedCurrency.symbol,
+        });
+        
+        // ⚠️ CRUCIAL FIX: Also update the currency details in the profile object
+        updateProfile({
+          currency: value, // Ensure this matches the selected value
+          currencySymbol: selectedCurrency.symbol,
+          currencyCode: selectedCurrency.code,
         });
       }
     }
@@ -104,6 +113,9 @@ export default function ProfileSettings() {
         // Update the user in AuthContext
         updateUserProfile(data.user);
         
+        // 💾 CRUCIAL FIX: Save the updated profile to localStorage
+        localStorage.setItem('profileSettings', JSON.stringify(profile));
+
         setIsEditing(false);
         setOriginalProfile(null);
         toast.success('Profile updated successfully!');

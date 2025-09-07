@@ -76,7 +76,7 @@ export default function AddTransactionModal({
   ];
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<Transaction>({
-    id: '', // Use empty string instead of 0
+    id: '',
     description: '',
     category: '',
     amount: 0,
@@ -84,7 +84,7 @@ export default function AddTransactionModal({
     merchant: '',
     tags: [],
     type: 'expense',
-    notes: ''
+    notes: '',
   });
   const [tagInput, setTagInput] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -135,13 +135,13 @@ export default function AddTransactionModal({
   // Auto-categorization effect
   useEffect(() => {
     if (budgetPreferences.categorizeTransactions && formData.description && !formData.category) {
-      const suggestedCategory = suggestCategory(formData.description, formData.merchant);
+      const suggestedCategory = suggestCategory(formData.description, formData.merchant || '');
       if (suggestedCategory) {
         setFormData(prev => ({ ...prev, category: suggestedCategory }));
         toast.success(`Auto-categorized as "${suggestedCategory}"`);
       }
     }
-  }, [formData.description, formData.merchant, budgetPreferences.categorizeTransactions]);
+  }, [formData.description, formData.merchant, budgetPreferences.categorizeTransactions, formData.category]);
 
   // Initialize form data when modal opens or transaction changes
   useEffect(() => {
@@ -278,6 +278,7 @@ export default function AddTransactionModal({
         if (onSave) {
           onSave({ ...formData, amount: finalAmount } as Transaction);
         }
+        // ONLY close the modal after the transaction has been successfully added/updated
         onClose();
       }
     } catch (error) {

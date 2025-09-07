@@ -42,8 +42,6 @@ interface TransactionContextType {
   setBudgetRefreshCallback: (callback: () => Promise<void>) => void;
 }
 
-
-
 // Category to icon/color mapping
 const categoryMapping: Record<string, { icon: string; color: string }> = {
   'Food & Dining': { icon: 'ri-restaurant-line', color: 'text-blue-600 bg-blue-50' },
@@ -176,6 +174,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
           icon: categoryMapping[data.transaction.category]?.icon || 'ri-more-line',
           color: categoryMapping[data.transaction.category]?.color || 'text-gray-600 bg-gray-50'
         };
+        // ONLY update the local state AFTER a successful API response
         setTransactions(prev => [newTransaction, ...prev]);
         
         // Refresh budgets if callback is set and this is an expense

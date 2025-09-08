@@ -1,30 +1,34 @@
-# Next.js build output
-.next/
-out/
-
-# Dependencies
-node_modules/
-
-# Environment variables
-.env*
-!.env.example
-
 # Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
-# Other build/artifact directories
-dist/
-build/
-coverage/
+# Dependency directories
+node_modules
 
-# IDE and OS files
+# Build outputs
+.next
+dist
+dist-ssr
+out
+
+# Local environment files
+.env
+.env.local.example
+*.local
+
+# Editor directories and files
 .vscode/
+!.vscode/extensions.json
 .idea/
 .DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# Prisma client generation
-/lib/generated/prisma/
+# Prisma generated client (if using Prisma)
+/lib/generated/prisma

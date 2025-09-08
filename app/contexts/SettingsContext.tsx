@@ -45,6 +45,8 @@ export interface ProfileSettings {
   language: string;
   currency: string;
   profilePicture?: string;
+  currencySymbol?: string;
+  currencyCode?: string;
 }
 
 interface BudgetPreferences {
@@ -111,7 +113,9 @@ const defaultProfile: ProfileSettings = {
   timezone: 'Eastern Time',
   language: 'English',
   currency: 'USD - US Dollar ($)',
-  profilePicture: undefined
+  profilePicture: undefined,
+  currencySymbol: '$', // Corrected line
+  currencyCode: 'USD' // Corrected line
 };
 
 const defaultBudgetPreferences: BudgetPreferences = {

@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useTransactions } from '../contexts/TransactionContext';
 import { useTutorial } from '../../hooks/useTutorial';
 import toast from 'react-hot-toast';
+import { useSettings } from '../contexts/SettingsContext';
 
 export default function DashboardPage() {
   const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
@@ -23,6 +24,8 @@ export default function DashboardPage() {
   const router = useRouter();
   const { addTransaction, transactions } = useTransactions();
   const { showTutorial, showWelcome, closeTutorial, closeWelcome, completeTutorial, startTutorial } = useTutorial();
+  const { budgetPreferences } = useSettings();
+  const currencySymbol = budgetPreferences.currencySymbol || '';
 
   const handleExportData = () => {
     if (transactions.length === 0) {
@@ -236,7 +239,7 @@ export default function DashboardPage() {
                   <i className={`${expense.icon} text-white text-base sm:text-lg`}></i>
                 </div>
                 <span className="text-responsive-xs font-medium text-gray-900 text-center">{expense.description}</span>
-                <span className="text-xs text-gray-500">K{expense.amount}</span>
+                <span className="text-xs text-gray-500">{currencySymbol}{expense.amount}</span>
               </button>
             ))}
           </ResponsiveGrid>

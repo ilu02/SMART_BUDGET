@@ -140,7 +140,6 @@ export default function TestCookiesPage() {
             <div className="space-y-2">
               <p><strong>Theme:</strong> {appearance.theme}</p>
               <p><strong>Font Size:</strong> {appearance.fontSize}</p>
-              <p><strong>Language:</strong> {appearance.language}</p>
               <p><strong>Compact Mode:</strong> {appearance.compactMode ? 'Yes' : 'No'}</p>
               <p><strong>Animations:</strong> {appearance.animations ? 'Yes' : 'No'}</p>
             </div>
@@ -163,7 +162,7 @@ export default function TestCookiesPage() {
                   <Button onClick={checkAuthData} className="mr-4">
                     🔍 Check Auth Data
                   </Button>
-                  <Button onClick={clearAllAuthData} variant="destructive">
+                  <Button onClick={clearAllAuthData} variant="danger">
                     🗑️ Clear All Auth Data (Force Logout)
                   </Button>
                 </div>

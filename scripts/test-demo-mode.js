@@ -10,7 +10,6 @@ console.log('\nDemo data results:');
 console.log('- User:', demoData.user ? 'Present' : 'Empty');
 console.log('- Transactions:', demoData.transactions.length, 'items');
 console.log('- Budgets:', demoData.budgets.length, 'items');
-console.log('- Quick Expenses:', demoData.quickExpenses.length, 'items');
 
 if (isDemoMode()) {
   console.log('\n✅ Demo mode is ENABLED - Sample data will be loaded');

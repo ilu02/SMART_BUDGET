@@ -3,25 +3,31 @@ logs
 *.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
+# Dependency directories
 node_modules
+
+# Build outputs
+.next
 dist
 dist-ssr
+out
+
+# Local environment files
+.env
 *.local
 
 # Editor directories and files
-.vscode/*
+.vscode/
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-/dist
 
+# Prisma generated client (if using Prisma)
 /lib/generated/prisma

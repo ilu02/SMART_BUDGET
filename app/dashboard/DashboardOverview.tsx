@@ -309,6 +309,7 @@ export default function DashboardOverview() {
                 key={range.key}
                 onClick={() => setSelectedRange(range.key)}
                 title={range.tooltip}
+                aria-pressed={selectedRange === range.key}
                 className={`flex items-center space-x-1.5 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
                   selectedRange === range.key
                     ? 'bg-white text-blue-700 shadow-sm border border-blue-200'

@@ -1,4 +1,4 @@
-import { InputHTMLAttributes, forwardRef } from 'react';
+import { InputHTMLAttributes, forwardRef, useId } from 'react';
 import { cn } from '@/lib/utils';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -9,7 +9,8 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, error, helperText, id, ...props }, ref) => {
-    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+    const reactId = useId();
+    const inputId = id || reactId;
     const errorId = error ? `${inputId}-error` : undefined;
     const helperId = helperText ? `${inputId}-helper` : undefined;
 
@@ -28,8 +29,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             error && 'border-red-500 focus-visible:ring-red-500',
             className
           )}
-          aria-invalid={error ? 'true' : 'false'}
-          aria-describedby={cn(errorId, helperId)}
+          aria-invalid={!!error}
+          aria-describedby={[errorId, helperId].filter(Boolean).join(' ') || undefined}
           {...props}
         />
         {helperText && !error && (

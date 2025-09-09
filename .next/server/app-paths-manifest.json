@@ -1,8 +1,8 @@
 {
-  "/dashboard/page": "app/dashboard/page.js",
-  "/budgets/page": "app/budgets/page.js",
   "/settings/page": "app/settings/page.js",
-  "/api/budgets/route": "app/api/budgets/route.js",
-  "/analytics/page": "app/analytics/page.js",
-  "/api/transactions/route": "app/api/transactions/route.js"
+  "/dashboard/page": "app/dashboard/page.js",
+  "/transactions/page": "app/transactions/page.js",
+  "/api/transactions/route": "app/api/transactions/route.js",
+  "/budgets/page": "app/budgets/page.js",
+  "/api/budgets/route": "app/api/budgets/route.js"
 }

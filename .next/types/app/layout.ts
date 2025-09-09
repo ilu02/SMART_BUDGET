@@ -1,4 +1,4 @@
-// File: C:\Users\USER\Desktop\smart_project2\app\layout.tsx
+// File: C:\Users\USER\OneDrive\Desktop\smart_project2\app\layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

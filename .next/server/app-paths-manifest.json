@@ -1,8 +1,0 @@
-{
-  "/settings/page": "app/settings/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/transactions/page": "app/transactions/page.js",
-  "/api/transactions/route": "app/api/transactions/route.js",
-  "/budgets/page": "app/budgets/page.js",
-  "/api/budgets/route": "app/api/budgets/route.js"
-}

@@ -76,6 +76,7 @@ interface SettingsContextType {
   updateProfile: (settings: Partial<ProfileSettings>) => void;
   resetSettings: () => void;
   formatCurrency: (amount: number) => string;
+  getCurrencySymbol: () => string; // Add this to the interface
   clearUserSettings: () => void;
 }
 
@@ -267,6 +268,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return amount < 0 ? `-${formattedAmount}` : formattedAmount;
   };
 
+  // Add this function to return the currency symbol based on budget preferences
+  const getCurrencySymbol = (): string => {
+    return budgetPreferences.currencySymbol;
+  };
+
   const updateAppearance = (settings: Partial<AppearanceSettings>) => {
     setAppearance(prev => ({ ...prev, ...settings }));
   };
@@ -335,6 +341,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         updateProfile,
         resetSettings,
         formatCurrency,
+        getCurrencySymbol,
         clearUserSettings
       }}
     >

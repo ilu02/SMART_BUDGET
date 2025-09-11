@@ -4,11 +4,11 @@ import { useState } from 'react';
 import Header from '../../components/Header';
 import BudgetCard from './BudgetCard';
 import AddBudgetModal from './AddBudgetModal';
-import { Card } from '@/components/ui/Card';
+import EditBudgetModal from './EditBudgetModal'; 
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
 import { useSettings } from '../contexts/SettingsContext';
-import { useBudgets } from '../contexts/BudgetContext';
+import { useBudgets, Budget } from '../contexts/BudgetContext';
 
 export default function BudgetsPage() {
   const { formatCurrency } = useSettings();
@@ -19,15 +19,33 @@ export default function BudgetsPage() {
     getTotalSpent, 
     getTotalRemaining, 
     getOverallProgress,
-    refreshBudgets
+    refreshBudgets,
+    updateBudget
   } = useBudgets();
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
 
   const totalBudget = getTotalBudget();
   const totalSpent = getTotalSpent();
   const totalRemaining = getTotalRemaining();
   const overallProgress = getOverallProgress();
+
+  const handleEditBudget = (budget: Budget) => {
+    setSelectedBudget(budget);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async (id: string, newAmount: number) => {
+    await updateBudget(id, { budget: newAmount });
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedBudget(null);
+  };
 
   if (loading) {
     return (
@@ -49,7 +67,7 @@ export default function BudgetsPage() {
           {/* Summary Cards Skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             {[...Array(4)].map((_, i) => (
-              <Card key={i} className="p-6">
+              <div key={i} className="p-6">
                 <div className="flex items-center">
                   <Skeleton className="w-10 h-10 rounded-lg" />
                   <div className="ml-4">
@@ -57,12 +75,12 @@ export default function BudgetsPage() {
                     <Skeleton className="h-6 w-16" />
                   </div>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
 
           {/* Progress Bar Skeleton */}
-          <Card className="p-6 mb-8">
+          <div className="p-6 mb-8">
             <div className="flex items-center justify-between mb-4">
               <Skeleton className="h-5 w-48" />
               <Skeleton className="h-4 w-16" />
@@ -72,12 +90,12 @@ export default function BudgetsPage() {
               <Skeleton className="h-4 w-20" />
               <Skeleton className="h-4 w-24" />
             </div>
-          </Card>
+          </div>
 
           {/* Budget Cards Skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <Card key={i} className="p-6">
+              <div key={i} className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-3">
                     <Skeleton className="w-10 h-10 rounded-lg" />
@@ -99,7 +117,7 @@ export default function BudgetsPage() {
                   <Skeleton className="flex-1 h-8" />
                   <Skeleton className="flex-1 h-8" />
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         </div>
@@ -249,7 +267,12 @@ export default function BudgetsPage() {
         {/* Budget Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {budgets.map((budget) => (
-            <BudgetCard key={budget.id} budget={budget} />
+            <BudgetCard 
+              key={budget.id} 
+              budget={budget} 
+              onEdit={() => handleEditBudget(budget)}
+              onSave={handleSaveEdit} // Pass the handleSaveEdit function here
+            />
           ))}
         </div>
 
@@ -290,6 +313,16 @@ export default function BudgetsPage() {
         onClose={() => setIsAddModalOpen(false)}
         onSave={() => refreshBudgets()}
       />
+
+      {/* Edit Budget Modal */}
+      {selectedBudget && (
+        <EditBudgetModal
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          budget={selectedBudget}
+          onSave={handleSaveEdit}
+        />
+      )}
     </div>
   );
 }

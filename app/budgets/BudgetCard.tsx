@@ -153,7 +153,7 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
           {/* Progress indicators */}
           <div className="flex justify-between mt-1 text-xs text-gray-400">
             <span>0%</span>
-            <span className="text-yellow-500">80%</span>
+            <span className="text-yellow-500">50%</span>
             <span className="text-red-500">100%</span>
           </div>
         </div>

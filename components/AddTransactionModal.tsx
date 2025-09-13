@@ -246,7 +246,7 @@ export default function AddTransactionModal({
         const originalAmount = Math.abs(formData.amount);
         const roundedAmount = Math.ceil(originalAmount);
         roundUpAmount = roundedAmount - originalAmount;
-        
+
         if (roundUpAmount > 0) {
           finalAmount = -roundedAmount; // Use rounded amount for expense
           toast.success(`Rounded up by ${formatCurrency(roundUpAmount)} - saved to your account!`);
@@ -264,20 +264,21 @@ export default function AddTransactionModal({
       };
 
       let success = false;
-      
+
+      // Check if we are updating an existing transaction
       if (transaction?.id) {
-        // Update existing transaction
+        // Corrected logic for updating
         await updateTransaction(transaction.id, transactionData);
+        if (onSave) {
+          onSave({ ...transactionData, id: transaction.id } as Transaction);
+        }
         success = true;
       } else {
-        // Add new transaction
+        // Corrected logic for adding a new transaction
         success = await addTransaction(transactionData);
       }
 
       if (success) {
-        if (onSave) {
-          onSave({ ...formData, amount: finalAmount } as Transaction);
-        }
         onClose();
       }
     } catch (error) {

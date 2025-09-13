@@ -120,8 +120,28 @@ export default function BudgetCard({ budget, onEdit, onSave }: BudgetCardProps) 
               aria-valuenow={Math.min(percentage, 100)}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label={`${budget.category} budget usage`}
-            ></div>
+              aria-label={`${budget.category} budget usage: ${percentage.toFixed(1)}%`}
+            >
+              {/* Animated shine effect for progress bar */}
+              <div className="h-full w-full rounded-full bg-gradient-to-r from-transparent via-white to-transparent opacity-20 animate-pulse"></div>
+            </div>
+            {/* Overflow indicator for over-budget */}
+            {isOverBudget && (
+              <div 
+                className="h-3 bg-red-600 rounded-r-full border-2 border-red-700 animate-pulse"
+                style={{ 
+                  width: `${Math.min(percentage - 100, 20)}%`,
+                  marginTop: '-12px',
+                  marginLeft: '100%'
+                }}
+              ></div>
+            )}
+          </div>
+          {/* Progress indicators */}
+          <div className="flex justify-between mt-1 text-xs text-gray-400">
+            <span>0%</span>
+            <span className="text-yellow-500">50%</span>
+            <span className="text-red-500">100%</span>
           </div>
         </div>
 

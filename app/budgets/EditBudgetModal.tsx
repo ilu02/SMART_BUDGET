@@ -3,21 +3,29 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Budget } from '../contexts/BudgetContext';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface EditBudgetModalProps {
   isOpen: boolean;
   onClose: () => void;
   budget: Budget;
+  onSave: (id: string, newBudget: number) => void;
 }
 
-export default function EditBudgetModal({ isOpen, onClose, budget }: EditBudgetModalProps) {
+export default function EditBudgetModal({ isOpen, onClose, budget, onSave }: EditBudgetModalProps) {
   const [newBudget, setNewBudget] = useState(budget.budget);
+  const { getCurrencySymbol } = useSettings(); // Now this will not show an error
 
   useEffect(() => {
     setNewBudget(budget.budget);
   }, [budget]);
 
   const handleSave = () => {
+    if (newBudget <= 0) {
+      toast.error('Budget amount must be greater than zero.');
+      return;
+    }
+    onSave(budget.id, newBudget);
     toast.success('Budget updated successfully!');
     onClose();
   };
@@ -37,7 +45,7 @@ export default function EditBudgetModal({ isOpen, onClose, budget }: EditBudgetM
             Budget Amount
           </label>
           <div className="relative">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span>
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">{getCurrencySymbol()}</span>
             <input
               id="budgetAmount"
               type="number"

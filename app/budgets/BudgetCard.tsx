@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -24,9 +23,11 @@ interface Budget {
 
 interface BudgetCardProps {
   budget: Budget;
+  onEdit: () => void;
+  onSave: (id: string, newBudget: number) => void; // Added onSave to the interface
 }
 
-export default function BudgetCard({ budget }: BudgetCardProps) {
+export default function BudgetCard({ budget, onEdit, onSave }: BudgetCardProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -41,31 +42,15 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
   const isNearLimit = percentage > 80 && percentage <= 100;
 
   const getStatusColor = () => {
-    if (percentage > 100) return 'text-red-600';
-    if (percentage > 90) return 'text-red-500';
-    if (percentage > 80) return 'text-yellow-600';
-    if (percentage > 70) return 'text-yellow-500';
-    if (percentage > 60) return 'text-orange-500';
+    if (isOverBudget) return 'text-red-600';
+    if (isNearLimit) return 'text-yellow-600';
     return 'text-green-600';
   };
 
   const getProgressBarColor = () => {
-    if (percentage > 100) return 'bg-red-500';
-    if (percentage > 90) return 'bg-red-400';
-    if (percentage > 80) return 'bg-yellow-500';
-    if (percentage > 70) return 'bg-yellow-400';
-    if (percentage > 60) return 'bg-orange-400';
+    if (isOverBudget) return 'bg-red-500';
+    if (isNearLimit) return 'bg-yellow-500';
     return budget.color;
-  };
-
-  const getProgressBarGradient = () => {
-    if (percentage > 100) return 'bg-gradient-to-r from-red-500 to-red-600';
-    if (percentage > 90) return 'bg-gradient-to-r from-red-400 to-red-500';
-    if (percentage > 80) return 'bg-gradient-to-r from-yellow-400 to-red-400';
-    if (percentage > 70) return 'bg-gradient-to-r from-yellow-400 to-yellow-500';
-    if (percentage > 60) return 'bg-gradient-to-r from-orange-400 to-yellow-400';
-    if (percentage > 40) return 'bg-gradient-to-r from-green-400 to-orange-400';
-    return `bg-gradient-to-r from-green-400 to-green-500`;
   };
 
   const handleViewTransactions = () => {
@@ -79,6 +64,11 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
     } catch (error) {
       console.error('Error deleting budget:', error);
     }
+  };
+
+  const handleEditClick = () => {
+    setIsEditModalOpen(true);
+    // You can also call the onEdit prop if needed, e.g., onEdit();
   };
 
   return (
@@ -122,13 +112,10 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
 
         {/* Progress Bar */}
         <div className="mb-4">
-          <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
             <div 
-              className={`h-3 rounded-full transition-all duration-500 ease-in-out ${getProgressBarGradient()} shadow-sm`}
-              style={{ 
-                width: `${Math.min(percentage, 100)}%`,
-                boxShadow: percentage > 80 ? '0 0 8px rgba(239, 68, 68, 0.3)' : '0 0 4px rgba(0, 0, 0, 0.1)'
-              }}
+              className={`h-2.5 rounded-full ${getProgressBarColor()}`}
+              style={{ width: `${Math.min(percentage, 100)}%` }}
               role="progressbar"
               aria-valuenow={Math.min(percentage, 100)}
               aria-valuemin={0}
@@ -160,40 +147,22 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
 
         {/* Status Message */}
         <div className="mb-4">
-          {percentage > 100 && (
-            <div className="flex items-center space-x-2 text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-200 animate-pulse">
+          {isOverBudget && (
+            <div className="flex items-center space-x-2 text-red-600 bg-red-50 px-3 py-2 rounded-lg">
               <i className="ri-alert-line"></i>
               <span className="text-sm font-medium">Over budget by {formatCurrency(budget.spent - budget.budget)}</span>
             </div>
           )}
-          {percentage > 90 && percentage <= 100 && (
-            <div className="flex items-center space-x-2 text-red-500 bg-red-50 px-3 py-2 rounded-lg border border-red-200">
-              <i className="ri-error-warning-line"></i>
-              <span className="text-sm font-medium">Critical: {(100 - percentage).toFixed(1)}% budget remaining</span>
-            </div>
-          )}
-          {percentage > 80 && percentage <= 90 && (
-            <div className="flex items-center space-x-2 text-yellow-600 bg-yellow-50 px-3 py-2 rounded-lg border border-yellow-200">
+          {isNearLimit && !isOverBudget && (
+            <div className="flex items-center space-x-2 text-yellow-600 bg-yellow-50 px-3 py-2 rounded-lg">
               <i className="ri-warning-line"></i>
-              <span className="text-sm font-medium">Warning: {(100 - percentage).toFixed(1)}% budget remaining</span>
+              <span className="text-sm font-medium">Approaching budget limit</span>
             </div>
           )}
-          {percentage > 70 && percentage <= 80 && (
-            <div className="flex items-center space-x-2 text-yellow-500 bg-yellow-50 px-3 py-2 rounded-lg border border-yellow-200">
-              <i className="ri-information-line"></i>
-              <span className="text-sm font-medium">Caution: {(100 - percentage).toFixed(1)}% budget remaining</span>
-            </div>
-          )}
-          {percentage > 60 && percentage <= 70 && (
-            <div className="flex items-center space-x-2 text-orange-500 bg-orange-50 px-3 py-2 rounded-lg border border-orange-200">
-              <i className="ri-time-line"></i>
-              <span className="text-sm font-medium">Monitor: {(100 - percentage).toFixed(1)}% budget remaining</span>
-            </div>
-          )}
-          {percentage <= 60 && (
-            <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
+          {!isNearLimit && !isOverBudget && (
+            <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded-lg">
               <i className="ri-check-line"></i>
-              <span className="text-sm font-medium">On track: {(100 - percentage).toFixed(1)}% budget remaining</span>
+              <span className="text-sm font-medium">On track</span>
             </div>
           )}
         </div>
@@ -212,7 +181,7 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
 
         {/* Secondary Action Buttons */}
         <div className="flex space-x-2 mt-2">
-          <button onClick={() => setIsEditModalOpen(true)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap cursor-pointer btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+          <button onClick={handleEditClick} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap cursor-pointer btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
             <i className="ri-edit-line mr-2"></i>
             Edit
           </button>
@@ -254,6 +223,7 @@ export default function BudgetCard({ budget }: BudgetCardProps) {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         budget={budget}
+        onSave={onSave} // Pass the onSave prop from here
       />
       <HistoryModal
         isOpen={isHistoryModalOpen}

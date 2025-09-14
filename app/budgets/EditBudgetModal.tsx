@@ -2,23 +2,33 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { Budget } from '../contexts/BudgetContext';
+import { Budget, useBudgets } from '../contexts/BudgetContext';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface EditBudgetModalProps {
   isOpen: boolean;
   onClose: () => void;
   budget: Budget;
+  onSave: (id: string, updates: Partial<Budget>) => void;
 }
 
-export default function EditBudgetModal({ isOpen, onClose, budget }: EditBudgetModalProps) {
+export default function EditBudgetModal({ isOpen, onClose, budget, onSave }: EditBudgetModalProps) {
   const [newBudget, setNewBudget] = useState(budget.budget);
+  const { currencySymbol } = useSettings();
 
   useEffect(() => {
     setNewBudget(budget.budget);
   }, [budget]);
 
-  const handleSave = () => {
-    toast.success('Budget updated successfully!');
+  const handleSave = async () => {
+    if (newBudget <= 0) {
+      toast.error('Budget amount must be a positive number.');
+      return;
+    }
+    
+    // Pass the id and the new budget amount in an object to match the onSave prop type
+    onSave(budget.id, { budget: newBudget });
+
     onClose();
   };
 
@@ -37,7 +47,9 @@ export default function EditBudgetModal({ isOpen, onClose, budget }: EditBudgetM
             Budget Amount
           </label>
           <div className="relative">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span>
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+              {currencySymbol}
+            </span>
             <input
               id="budgetAmount"
               type="number"

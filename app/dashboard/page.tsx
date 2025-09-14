@@ -52,7 +52,7 @@ export default function DashboardPage() {
       const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
       const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
       const netBalance = totalIncome - totalExpenses;
-      
+      
       const summaryContent = [
         '',
         'SUMMARY',
@@ -74,7 +74,7 @@ export default function DashboardPage() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+      
       toast.success(`Exported ${transactions.length} transactions successfully!`);
     } catch (error) {
       toast.error('Failed to export data. Please try again.');
@@ -90,6 +90,19 @@ export default function DashboardPage() {
   const handleSaveIncome = (transactionData: any) => {
     addTransaction({ ...transactionData, type: 'income' });
     setIsAddIncomeOpen(false);
+  };
+
+  const handleQuickExpense = (amount: number, description: string, category: string) => {
+    const transaction = {
+      amount,
+      description,
+      category,
+      type: 'expense' as const,
+      date: new Date().toISOString(),
+      id: Date.now().toString()
+    };
+    addTransaction(transaction);
+    toast.success(`Added ${description} - $${amount}`);
   };
 
   // Keyboard shortcuts
@@ -180,57 +193,24 @@ export default function DashboardPage() {
         </div>
 
         {/* Main Dashboard Grid */}
-        <ResponsiveGrid 
-          cols={{ mobile: 1, tablet: 1, desktop: 4 }} 
-          gap="lg" 
+        <ResponsiveGrid 
+          cols={{ mobile: 1, tablet: 1, desktop: 4 }} 
+          gap="lg" 
           className="mb-6 sm:mb-8 lg:mb-12"
         >
-          {/* Left Column - Main Overview */}
-          <div className="lg:col-span-3 space-responsive-lg" data-tutorial="dashboard-overview">
+          {/* Top Row */}
+          <div className="lg:col-span-4" data-tutorial="dashboard-overview">
             <DashboardOverview />
           </div>
-
-          {/* Right Column - Sidebar */}
-          <div className="space-responsive-lg">
-            <RecentTransactions />
-          </div>
         </ResponsiveGrid>
+      
+        {/* Recent Transactions in a new row */}
+        <div className="mt-6 sm:mt-8 lg:mt-12">
+          <RecentTransactions />
+        </div>
 
         {/* Quick Actions */}
         <QuickActions />
-
-        {/* Quick Expense Shortcuts */}
-        <div className="mt-6 sm:mt-8 card-responsive">
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <div>
-              <h3 className="text-responsive-lg font-semibold text-gray-900">Quick Expense Shortcuts</h3>
-              <p className="text-responsive-sm text-gray-600 hidden sm:block">Add common expenses with one click</p>
-              <p className="text-responsive-xs text-gray-600 sm:hidden">Quick expenses</p>
-            </div>
-          </div>
-          <ResponsiveGrid cols={{ mobile: 2, tablet: 4, desktop: 6 }} gap="md">
-            {[
-              { amount: 5, description: 'Coffee', category: 'Food & Dining', icon: 'ri-cup-line', color: 'bg-amber-500' },
-              { amount: 15, description: 'Lunch', category: 'Food & Dining', icon: 'ri-restaurant-line', color: 'bg-orange-500' },
-              { amount: 10, description: 'Gas', category: 'Transportation', icon: 'ri-gas-station-line', color: 'bg-blue-500' },
-              { amount: 25, description: 'Groceries', category: 'Food & Dining', icon: 'ri-shopping-cart-line', color: 'bg-green-500' },
-              { amount: 12, description: 'Parking', category: 'Transportation', icon: 'ri-parking-line', color: 'bg-purple-500' },
-              { amount: 8, description: 'Snacks', category: 'Food & Dining', icon: 'ri-cake-3-line', color: 'bg-pink-500' }
-            ].map((expense, index) => (
-              <button
-                key={index}
-                onClick={() => handleQuickExpense(expense.amount, expense.description, expense.category)}
-                className="touch-target flex flex-col items-center p-3 sm:p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 group"
-              >
-                <div className={`w-10 h-10 sm:w-12 sm:h-12 ${expense.color} rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-200`}>
-                  <i className={`${expense.icon} text-white text-base sm:text-lg`}></i>
-                </div>
-                <span className="text-responsive-xs font-medium text-gray-900 text-center">{expense.description}</span>
-                <span className="text-xs text-gray-500">{currencySymbol}{expense.amount}</span>
-              </button>
-            ))}
-          </ResponsiveGrid>
-        </div>
 
         {/* Keyboard Shortcuts Help - Hidden on mobile */}
         <div className="mt-6 bg-gray-50 rounded-lg p-4 hidden md:block print-hidden">
@@ -250,14 +230,14 @@ export default function DashboardPage() {
       </ResponsiveContainer>
 
       {/* Add Transaction Modal */}
-      <AddTransactionModal 
+      <AddTransactionModal 
         isOpen={isAddTransactionOpen}
         onClose={() => setIsAddTransactionOpen(false)}
         onSave={handleSaveTransaction}
       />
 
       {/* Add Income Modal */}
-      <AddTransactionModal 
+      <AddTransactionModal 
         isOpen={isAddIncomeOpen}
         onClose={() => setIsAddIncomeOpen(false)}
         onSave={handleSaveIncome}

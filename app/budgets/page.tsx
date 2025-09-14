@@ -8,18 +8,20 @@ import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
 import { useSettings } from '../contexts/SettingsContext';
-import { useBudgets } from '../contexts/BudgetContext';
+import { useBudgets, Budget } from '../contexts/BudgetContext'; // Corrected line
+import toast from 'react-hot-toast';
 
 export default function BudgetsPage() {
   const { formatCurrency } = useSettings();
-  const { 
-    budgets, 
-    loading, 
-    getTotalBudget, 
-    getTotalSpent, 
-    getTotalRemaining, 
+  const {
+    budgets,
+    loading,
+    getTotalBudget,
+    getTotalSpent,
+    getTotalRemaining,
     getOverallProgress,
-    refreshBudgets
+    refreshBudgets,
+    updateBudget
   } = useBudgets();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
@@ -28,6 +30,17 @@ export default function BudgetsPage() {
   const totalSpent = getTotalSpent();
   const totalRemaining = getTotalRemaining();
   const overallProgress = getOverallProgress();
+
+  const handleBudgetUpdate = async (id: string, updates: Partial<Budget>) => {
+    try {
+      await updateBudget(id, updates);
+      refreshBudgets();
+      toast.success('Budget updated successfully!');
+    } catch (error) {
+      console.error('Failed to update budget:', error);
+      toast.error('Failed to update budget.');
+    }
+  };
 
   if (loading) {
     return (
@@ -151,8 +164,8 @@ export default function BudgetsPage() {
                 <button
                   onClick={() => setSelectedPeriod('month')}
                   className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
-                    selectedPeriod === 'month' 
-                      ? 'bg-blue-600 text-white shadow-sm' 
+                    selectedPeriod === 'month'
+                      ? 'bg-blue-600 text-white shadow-sm'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }`}
                 >
@@ -161,8 +174,8 @@ export default function BudgetsPage() {
                 <button
                   onClick={() => setSelectedPeriod('year')}
                   className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
-                    selectedPeriod === 'year' 
-                      ? 'bg-blue-600 text-white shadow-sm' 
+                    selectedPeriod === 'year'
+                      ? 'bg-blue-600 text-white shadow-sm'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }`}
                 >
@@ -235,7 +248,7 @@ export default function BudgetsPage() {
             <span className="text-sm text-gray-600">{overallProgress.toFixed(1)}% used</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3">
-            <div 
+            <div
               className={`h-3 rounded-full transition-all duration-300 ${overallProgress > 90 ? 'bg-red-500' : overallProgress > 70 ? 'bg-yellow-500' : 'bg-green-500'}`}
               style={{ width: `${Math.min(overallProgress, 100)}%` }}
             ></div>
@@ -249,7 +262,12 @@ export default function BudgetsPage() {
         {/* Budget Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {budgets.map((budget) => (
-            <BudgetCard key={budget.id} budget={budget} />
+            <BudgetCard
+              key={budget.id}
+              budget={budget}
+              onSave={handleBudgetUpdate}
+              onEdit={() => {}} // Provide an empty function to satisfy the prop requirement
+            />
           ))}
         </div>
 

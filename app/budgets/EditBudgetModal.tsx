@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { Budget, useBudgets } from '../contexts/BudgetContext';
+import { Budget } from '../contexts/BudgetContext';
 import { useSettings } from '../contexts/SettingsContext';
 
 interface EditBudgetModalProps {
@@ -20,7 +20,7 @@ export default function EditBudgetModal({ isOpen, onClose, budget, onSave }: Edi
     setNewBudget(budget.budget);
   }, [budget]);
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (newBudget <= 0) {
       toast.error('Budget amount must be a positive number.');
       return;
@@ -28,6 +28,7 @@ export default function EditBudgetModal({ isOpen, onClose, budget, onSave }: Edi
     
     // Pass the id and the new budget amount in an object to match the onSave prop type
     onSave(budget.id, { budget: newBudget });
+    toast.success('Budget updated successfully!');
 
     onClose();
   };

@@ -95,10 +95,12 @@ export default function RecentTransactions() {
           <p className="text-sm sm:text-base text-gray-600 hidden sm:block">Your latest financial activity</p>
         </div>
         <Link href="/transactions" className="flex-shrink-0 ml-4">
-          <Button variant="outline" size="sm" className="hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700">
+          <Button variant="outline" size="sm" className="hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 hidden sm:flex">
             <i className="ri-arrow-right-line mr-2" aria-hidden="true"></i>
-            <span className="hidden sm:inline">View All</span>
-            <span className="sm:hidden">All</span>
+            <span>View All</span>
+          </Button>
+          <Button variant="outline" size="sm" className="p-2 sm:hidden hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700">
+            <i className="ri-arrow-right-line" aria-hidden="true"></i>
           </Button>
         </Link>
       </div>
@@ -110,14 +112,13 @@ export default function RecentTransactions() {
               key={transaction.id} 
               transaction={transaction}
               onClick={() => {
-                // Handle transaction click
                 console.log('Transaction clicked:', transaction.id);
               }}
             />
           ))}
         </div>
       </div>
-
+      
       {/* Weekly Summary */}
       <div className="mt-6 pt-4 sm:pt-6 border-t border-gray-200 flex-shrink-0">
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 sm:p-6">
@@ -127,21 +128,23 @@ export default function RecentTransactions() {
             <span className="sm:hidden">This Week</span>
           </h4>
           <div className="grid grid-cols-2 gap-4 sm:gap-6">
-            <div className="text-center">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-2 sm:mb-3">
+            {/* Income Section */}
+            <div className="text-center flex flex-col items-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-2 sm:mb-3 flex-shrink-0">
                 <i className="ri-arrow-up-line text-green-600 text-base sm:text-lg" aria-hidden="true"></i>
               </div>
-              <p className="text-xs sm:text-sm text-gray-600 mb-1">Income</p>
-              <p className="font-bold text-lg sm:text-xl text-green-600 truncate">
+              <p className="text-xs sm:text-sm text-gray-600 mb-1 flex-shrink-0">Income</p>
+              <p className="font-bold text-lg sm:text-xl text-green-600 min-w-0 truncate">
                 +{formatCurrency(weeklyIncome)}
               </p>
             </div>
-            <div className="text-center">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-xl flex items-center justify-center mx-auto mb-2 sm:mb-3">
+            {/* Expenses Section */}
+            <div className="text-center flex flex-col items-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-xl flex items-center justify-center mx-auto mb-2 sm:mb-3 flex-shrink-0">
                 <i className="ri-arrow-down-line text-red-600 text-base sm:text-lg" aria-hidden="true"></i>
               </div>
-              <p className="text-xs sm:text-sm text-gray-600 mb-1">Expenses</p>
-              <p className="font-bold text-lg sm:text-xl text-red-600 truncate">
+              <p className="text-xs sm:text-sm text-gray-600 mb-1 flex-shrink-0">Expenses</p>
+              <p className="font-bold text-lg sm:text-xl text-red-600 min-w-0 truncate">
                 -{formatCurrency(weeklyExpenses)}
               </p>
             </div>

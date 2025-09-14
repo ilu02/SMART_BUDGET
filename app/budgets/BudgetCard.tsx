@@ -24,7 +24,6 @@ interface Budget {
 interface BudgetCardProps {
   budget: Budget;
   onEdit: () => void;
-  // This is the corrected type for the onSave prop
   onSave: (id: string, updates: Partial<Budget>) => void;
 }
 

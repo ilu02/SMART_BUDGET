@@ -9,12 +9,12 @@ interface EditBudgetModalProps {
   isOpen: boolean;
   onClose: () => void;
   budget: Budget;
-  onSave: (id: string, newBudget: number) => void;
+  onSave: (id: string, updates: Partial<Budget>) => void;
 }
 
 export default function EditBudgetModal({ isOpen, onClose, budget, onSave }: EditBudgetModalProps) {
   const [newBudget, setNewBudget] = useState(budget.budget);
-  const { getCurrencySymbol } = useSettings(); // Now this will not show an error
+  const { currencySymbol } = useSettings();
 
   useEffect(() => {
     setNewBudget(budget.budget);
@@ -22,11 +22,14 @@ export default function EditBudgetModal({ isOpen, onClose, budget, onSave }: Edi
 
   const handleSave = () => {
     if (newBudget <= 0) {
-      toast.error('Budget amount must be greater than zero.');
+      toast.error('Budget amount must be a positive number.');
       return;
     }
-    onSave(budget.id, newBudget);
+    
+    // Pass the id and the new budget amount in an object to match the onSave prop type
+    onSave(budget.id, { budget: newBudget });
     toast.success('Budget updated successfully!');
+
     onClose();
   };
 
@@ -45,7 +48,9 @@ export default function EditBudgetModal({ isOpen, onClose, budget, onSave }: Edi
             Budget Amount
           </label>
           <div className="relative">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">{getCurrencySymbol()}</span>
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+              {currencySymbol}
+            </span>
             <input
               id="budgetAmount"
               type="number"

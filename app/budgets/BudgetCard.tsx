@@ -24,7 +24,7 @@ interface Budget {
 interface BudgetCardProps {
   budget: Budget;
   onEdit: () => void;
-  onSave: (id: string, newBudget: number) => void; // Added onSave to the interface
+  onSave: (id: string, updates: Partial<Budget>) => void;
 }
 
 export default function BudgetCard({ budget, onEdit, onSave }: BudgetCardProps) {
@@ -68,7 +68,11 @@ export default function BudgetCard({ budget, onEdit, onSave }: BudgetCardProps) 
 
   const handleEditClick = () => {
     setIsEditModalOpen(true);
-    // You can also call the onEdit prop if needed, e.g., onEdit();
+  };
+  
+  // Create a new function to bridge the prop from EditBudgetModal
+  const handleSaveBudget = (id: string, updates: Partial<Budget>) => {
+    onSave(id, updates);
   };
 
   return (
@@ -113,7 +117,7 @@ export default function BudgetCard({ budget, onEdit, onSave }: BudgetCardProps) 
         {/* Progress Bar */}
         <div className="mb-4">
           <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div 
+            <div
               className={`h-2.5 rounded-full ${getProgressBarColor()}`}
               style={{ width: `${Math.min(percentage, 100)}%` }}
               role="progressbar"
@@ -122,14 +126,12 @@ export default function BudgetCard({ budget, onEdit, onSave }: BudgetCardProps) 
               aria-valuemax={100}
               aria-label={`${budget.category} budget usage: ${percentage.toFixed(1)}%`}
             >
-              {/* Animated shine effect for progress bar */}
               <div className="h-full w-full rounded-full bg-gradient-to-r from-transparent via-white to-transparent opacity-20 animate-pulse"></div>
             </div>
-            {/* Overflow indicator for over-budget */}
             {isOverBudget && (
-              <div 
+              <div
                 className="h-3 bg-red-600 rounded-r-full border-2 border-red-700 animate-pulse"
-                style={{ 
+                style={{
                   width: `${Math.min(percentage - 100, 20)}%`,
                   marginTop: '-12px',
                   marginLeft: '100%'
@@ -137,7 +139,6 @@ export default function BudgetCard({ budget, onEdit, onSave }: BudgetCardProps) 
               ></div>
             )}
           </div>
-          {/* Progress indicators */}
           <div className="flex justify-between mt-1 text-xs text-gray-400">
             <span>0%</span>
             <span className="text-yellow-500">50%</span>
@@ -223,7 +224,7 @@ export default function BudgetCard({ budget, onEdit, onSave }: BudgetCardProps) 
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         budget={budget}
-        onSave={onSave} // Pass the onSave prop from here
+        onSave={handleSaveBudget}
       />
       <HistoryModal
         isOpen={isHistoryModalOpen}
@@ -237,11 +238,10 @@ export default function BudgetCard({ budget, onEdit, onSave }: BudgetCardProps) 
         defaultCategory={budget.category}
         onSave={async () => {
           setIsAddExpenseOpen(false);
-          // Refresh the budget data
           await refreshBudgets();
         }}
       />
-      
+
       {/* Delete Confirmation Modal */}
       {isDeleteConfirmOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

@@ -222,14 +222,14 @@ export default function DashboardPage() {
       </ResponsiveContainer>
 
       {/* Add Transaction Modal */}
-      <AddTransactionModal 
+      <AddTransactionModal
         isOpen={isAddTransactionOpen}
         onClose={() => setIsAddTransactionOpen(false)}
         onSave={handleSaveTransaction}
       />
 
       {/* Add Income Modal */}
-      <AddTransactionModal 
+      <AddTransactionModal
         isOpen={isAddIncomeOpen}
         onClose={() => setIsAddIncomeOpen(false)}
         onSave={handleSaveIncome}

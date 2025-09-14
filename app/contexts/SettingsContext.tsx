@@ -2,12 +2,12 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { 
-  setJSONCookie, 
-  getJSONCookie, 
-  deleteCookie, 
-  getUserCookieName, 
-  APPEARANCE_COOKIE_OPTIONS 
+import {
+  setJSONCookie,
+  getJSONCookie,
+  deleteCookie,
+  getUserCookieName,
+  APPEARANCE_COOKIE_OPTIONS
 } from '@/lib/cookies';
 
 interface AppearanceSettings {
@@ -76,8 +76,9 @@ interface SettingsContextType {
   updateProfile: (settings: Partial<ProfileSettings>) => void;
   resetSettings: () => void;
   formatCurrency: (amount: number) => string;
-  getCurrencySymbol: () => string; // Add this to the interface
+  getCurrencySymbol: () => string;
   clearUserSettings: () => void;
+  currencySymbol: string;
 }
 
 const defaultAppearance: AppearanceSettings = {
@@ -115,8 +116,8 @@ const defaultProfile: ProfileSettings = {
   language: 'English',
   currency: 'USD - US Dollar ($)',
   profilePicture: undefined,
-  currencySymbol: '$', // Corrected line
-  currencyCode: 'USD' // Corrected line
+  currencySymbol: '$',
+  currencyCode: 'USD'
 };
 
 const defaultBudgetPreferences: BudgetPreferences = {
@@ -137,7 +138,7 @@ const defaultBudgetPreferences: BudgetPreferences = {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
-export function SettingsProvider({ children }: { children: ReactNode }) {
+export function SettingsProvider({ children }: { ReactNode }) {
   const { user } = useAuth();
   const [appearance, setAppearance] = useState<AppearanceSettings>(defaultAppearance);
   const [notifications, setNotifications] = useState<NotificationSettings>(defaultNotifications);
@@ -151,14 +152,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         // Load appearance settings from cookies (user-specific)
         const userAppearanceCookieName = getUserCookieName('appearanceSettings', user?.id);
         const savedAppearance = getJSONCookie<AppearanceSettings>(userAppearanceCookieName);
-        
+
         if (savedAppearance) {
           setAppearance({
             ...defaultAppearance,
             ...savedAppearance
           });
         } else {
-          // Check for legacy localStorage settings and migrate them
           const legacyAppearance = localStorage.getItem('appearanceSettings');
           if (legacyAppearance) {
             try {
@@ -167,7 +167,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 ...defaultAppearance,
                 ...parsed
               });
-              // Save to cookie and remove from localStorage
               if (user?.id) {
                 setJSONCookie(userAppearanceCookieName, parsed, APPEARANCE_COOKIE_OPTIONS);
               }
@@ -178,7 +177,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        // Load other settings from localStorage (these remain device-specific)
         const savedNotifications = localStorage.getItem('notificationSettings');
         const savedBudgetPreferences = localStorage.getItem('budgetPreferences');
         const savedProfile = localStorage.getItem('profileSettings');
@@ -188,7 +186,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         }
         if (savedBudgetPreferences) {
           const parsed = JSON.parse(savedBudgetPreferences);
-          // Ensure currency settings exist (for backward compatibility)
           setBudgetPreferences({
             ...defaultBudgetPreferences,
             ...parsed
@@ -207,23 +204,19 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     };
 
     loadSettings();
-  }, [user?.id]); // Re-load when user changes
+  }, [user?.id]);
 
-  // Sync profile with user data when user changes
   useEffect(() => {
     if (user) {
-      // Update profile with user data, but preserve other settings
       setProfile(prevProfile => ({
         ...prevProfile,
         firstName: user.name?.split(' ')[0] || prevProfile.firstName,
         lastName: user.name?.split(' ').slice(1).join(' ') || prevProfile.lastName,
         email: user.email || prevProfile.email,
-        // Keep other settings like phone, timezone, etc. from localStorage or defaults
       }));
     }
   }, [user]);
 
-  // Save appearance settings to cookies (user-specific)
   useEffect(() => {
     if (user?.id) {
       try {
@@ -235,7 +228,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   }, [appearance, user?.id]);
 
-  // Save other settings to localStorage (device-specific)
   useEffect(() => {
     try {
       localStorage.setItem('notificationSettings', JSON.stringify(notifications));
@@ -248,23 +240,18 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   const formatCurrency = (amount: number): string => {
     const { currencySymbol, currencyPosition, decimalPlaces, thousandsSeparator, decimalSeparator } = budgetPreferences;
-    
-    // Format the number
+
     const absAmount = Math.abs(amount);
     const parts = absAmount.toFixed(decimalPlaces).split('.');
     
-    // Add thousands separator
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator);
     
-    // Join with decimal separator
     const formattedNumber = parts.join(decimalSeparator);
     
-    // Add currency symbol
-    const formattedAmount = currencyPosition === 'before' 
+    const formattedAmount = currencyPosition === 'before'
       ? `${currencySymbol}${formattedNumber}`
       : `${formattedNumber}${currencySymbol}`;
-    
-    // Add negative sign if needed
+
     return amount < 0 ? `-${formattedAmount}` : formattedAmount;
   };
 
@@ -295,33 +282,27 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setBudgetPreferences(defaultBudgetPreferences);
     setProfile(defaultProfile);
     
-    // Remove appearance settings from cookies
     if (user?.id) {
       const userAppearanceCookieName = getUserCookieName('appearanceSettings', user.id);
       deleteCookie(userAppearanceCookieName);
     }
     
-    // Remove other settings from localStorage
     localStorage.removeItem('notificationSettings');
     localStorage.removeItem('budgetPreferences');
     localStorage.removeItem('profileSettings');
     
-    // Also remove legacy localStorage appearance settings if they exist
     localStorage.removeItem('appearanceSettings');
   };
 
   const clearUserSettings = () => {
-    // Reset appearance to defaults when user logs out
     setAppearance(defaultAppearance);
     
-    // Remove user-specific appearance cookie if it exists
     if (user?.id) {
       const userAppearanceCookieName = getUserCookieName('appearanceSettings', user.id);
       deleteCookie(userAppearanceCookieName);
     }
   };
 
-  // Handle user logout - reset appearance settings to defaults
   useEffect(() => {
     if (!user) {
       setAppearance(defaultAppearance);
@@ -341,8 +322,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         updateProfile,
         resetSettings,
         formatCurrency,
-        getCurrencySymbol,
-        clearUserSettings
+        clearUserSettings,
+        currencySymbol: budgetPreferences.currencySymbol,
+        getCurrencySymbol
       }}
     >
       {children}

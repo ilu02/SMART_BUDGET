@@ -15,6 +15,7 @@ export interface Budget {
   userId: string;
   createdAt?: string;
   updatedAt?: string;
+  lastTransactionDate?: Date | null;
 }
 
 interface BudgetContextType {

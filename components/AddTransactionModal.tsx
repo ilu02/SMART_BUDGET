@@ -76,7 +76,7 @@ export default function AddTransactionModal({
   ];
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<Transaction>({
-    id: '', // Use empty string instead of 0
+    id: '',
     description: '',
     category: '',
     amount: 0,
@@ -97,14 +97,14 @@ export default function AddTransactionModal({
     
     // Category keywords mapping
     const categoryKeywords: Record<string, string[]> = {
-      'Food & Dining': ['food', 'restaurant', 'cafe', 'coffee', 'pizza', 'burger', 'grocery', 'supermarket', 'dining', 'lunch', 'dinner', 'breakfast', 'starbucks', 'mcdonalds', 'subway', 'kfc'],
-      'Transportation': ['gas', 'fuel', 'uber', 'lyft', 'taxi', 'bus', 'train', 'parking', 'car', 'vehicle', 'transport', 'metro', 'subway'],
-      'Entertainment': ['movie', 'cinema', 'netflix', 'spotify', 'game', 'entertainment', 'concert', 'theater', 'music', 'streaming'],
-      'Shopping': ['amazon', 'store', 'shop', 'mall', 'clothing', 'clothes', 'shoes', 'electronics', 'target', 'walmart'],
+      'Food & Dining': ['food', 'restaurant', 'cafe', 'coffee', 'pizza', 'burger', 'grocery', 'supermarket', 'dining', 'lunch', 'dinner', 'breakfast', 'kfc'],
+      'Transportation': ['gas', 'fuel', 'yango', 'taxi', 'bus', 'parking', 'car', 'vehicle', 'transport'],
+      'Entertainment': ['movie', 'cinema', 'netflix', 'spotify', 'game', 'entertainment', 'concert', 'music', 'streaming'],
+      'Shopping': ['amazon', 'store', 'shop', 'mall', 'clothing', 'clothes', 'shoes', 'electronics', 'pep', 'mud'],
       'Health & Fitness': ['doctor', 'hospital', 'pharmacy', 'medicine', 'gym', 'fitness', 'health', 'medical', 'dentist'],
-      'Utilities': ['electric', 'water', 'gas', 'internet', 'phone', 'utility', 'bill', 'power', 'electricity'],
+      'Utilities': ['electric', 'water', 'gas', 'internet', 'phone', 'utility', 'bill', 'power', 'electricity', 'zesco'],
       'Education': ['school', 'university', 'course', 'book', 'education', 'tuition', 'learning'],
-      'Travel': ['hotel', 'flight', 'travel', 'vacation', 'trip', 'booking', 'airbnb'],
+      'Travel': ['hotel', 'flight', 'travel', 'vacation', 'trip', 'booking'],
       'Insurance': ['insurance', 'premium', 'policy'],
       'Savings': ['savings', 'investment', 'deposit', 'transfer']
     };
@@ -149,12 +149,12 @@ export default function AddTransactionModal({
       if (transaction) {
         setFormData({
           ...transaction,
-          amount: Math.abs(transaction.amount) // Always show positive amount in form
+          amount: Math.abs(transaction.amount)
         });
         setStep(1);
       } else {
         setFormData({
-          id: '', // Use empty string instead of 0
+          id: '',
           description: '',
           category: defaultCategory || '',
           amount: 0,
@@ -497,7 +497,7 @@ export default function AddTransactionModal({
             label="Merchant/Source"
             value={formData.merchant}
             onChange={(e) => setFormData(prev => ({ ...prev, merchant: e.target.value }))}
-            placeholder="e.g., Whole Foods, Tech Corp, Starbucks"
+            placeholder="e.g., Shoprite, Hungry Lion, Yango"
           />
         </div>
 

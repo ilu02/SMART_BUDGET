@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import {
   setJSONCookie,
@@ -138,7 +138,7 @@ const defaultBudgetPreferences: BudgetPreferences = {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
-export function SettingsProvider({ children }: { ReactNode }) {
+export function SettingsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [appearance, setAppearance] = useState<AppearanceSettings>(defaultAppearance);
   const [notifications, setNotifications] = useState<NotificationSettings>(defaultNotifications);

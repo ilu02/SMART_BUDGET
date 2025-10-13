@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Header from '../../components/Header';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -24,20 +25,17 @@ const filterOptions = [
 type FilterType = (typeof filterOptions)[number]['value'];
 
 export default function NotificationsPage() {
-    const { 
-        notifications, 
-        unreadCount, 
-        markAsRead, 
-        markAllAsRead, 
-        deleteNotification, 
-        clearAllRead 
-    } = useNotifications();
-    
-    // Use the defined type
-    const [filter, setFilter] = useState<FilterType>('all');
-    
-    const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'priority'>('newest');
-    const { formatCurrency } = useSettings();
+  const { 
+    notifications, 
+    unreadCount, 
+    markAsRead, 
+    markAllAsRead, 
+    deleteNotification, 
+    clearAllRead 
+  } = useNotifications();
+  const [filter, setFilter] = useState<'all' | 'unread' | 'budget' | 'transaction' | 'bill' | 'goal' | 'system' | 'security'>('all');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'priority'>('newest');
+  const { formatCurrency } = useSettings();
 
     const getNotificationIcon = (type: string, priority: string) => {
         const baseClasses = "w-10 h-10 rounded-lg flex items-center justify-center";
@@ -229,91 +227,91 @@ export default function NotificationsPage() {
                         </div>
                     </Card>
 
-                    {/* Notifications List */}
-                    <div className="space-y-3">
-                        {sortedNotifications.length === 0 ? (
-                            <Card className="p-8 text-center">
-                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <i className="ri-notification-off-line text-2xl text-gray-400" aria-hidden="true"></i>
-                                </div>
-                                <h3 className="text-lg font-medium text-gray-900 mb-2">No notifications</h3>
-                                <p className="text-gray-600">
-                                    {filter === 'all' ? 'You\'re all caught up!' : `No ${filter} notifications found.`}
-                                </p>
-                            </Card>
-                        ) : (
-                            sortedNotifications.map((notification) => (
-                                <Card
-                                    key={notification.id}
-                                    className={`p-4 transition-all hover:shadow-md ${
-                                        !notification.read ? 'bg-blue-50 border-blue-200' : 'bg-white'
-                                    }`}
-                                >
-                                    <div className="flex items-start space-x-4">
-                                        {getNotificationIcon(notification.type, notification.priority)}
-                                        
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center space-x-2 mb-1">
-                                                        <h3 className={`font-semibold ${!notification.read ? 'text-gray-900' : 'text-gray-700'}`}>
-                                                            {notification.title}
-                                                        </h3>
-                                                        {!notification.read && (
-                                                            <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                                                        )}
-                                                        {getPriorityBadge(notification.priority)}
-                                                    </div>
-                                                    <p className="text-gray-600 text-sm mb-2">{notification.message}</p>
-                                                    <div className="flex items-center space-x-4 text-xs text-gray-500">
-                                                        <span>{formatTimestamp(notification.timestamp)}</span>
-                                                        {notification.amount && (
-                                                            <span className="font-medium">{formatCurrency(notification.amount)}</span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="flex items-center space-x-2 ml-4">
-                                                    {notification.actionUrl && (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => {
-                                                                markAsRead(notification.id);
-                                                                // In a real app, you'd navigate to the URL
-                                                                toast.success(`Navigating to ${notification.actionText}`);
-                                                            }}
-                                                        >
-                                                            {notification.actionText}
-                                                        </Button>
-                                                    )}
-                                                    
-                                                    <div className="flex items-center space-x-1">
-                                                        {!notification.read && (
-                                                            <button
-                                                                onClick={() => markAsRead(notification.id)}
-                                                                className="p-1 text-gray-400 hover:text-blue-600 rounded transition-colors"
-                                                                title="Mark as read"
-                                                            >
-                                                                <i className="ri-check-line" aria-hidden="true"></i>
-                                                            </button>
-                                                        )}
-                                                        <button
-                                                            onClick={() => handleDeleteNotification(notification.id)}
-                                                            className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors"
-                                                            title="Delete notification"
-                                                        >
-                                                            <i className="ri-delete-bin-line" aria-hidden="true"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Card>
-                            ))
-                        )}
+          {/* Notifications List */}
+          <div className="space-y-3">
+            {sortedNotifications.length === 0 ? (
+              <Card className="p-8 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i className="ri-notification-off-line text-2xl text-gray-400" aria-hidden="true"></i>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No notifications</h3>
+                <p className="text-gray-600">
+                  {filter === 'all' ? 'You\'re all caught up!' : `No ${filter} notifications found.`}
+                </p>
+              </Card>
+            ) : (
+              sortedNotifications.map((notification) => (
+                <Card
+                  key={notification.id}
+                  className={`p-4 transition-all hover:shadow-md ${
+                    !notification.read ? 'bg-blue-50 border-blue-200' : 'bg-white'
+                  }`}
+                >
+                  <div className="flex items-start space-x-4">
+                    {getNotificationIcon(notification.type, notification.priority)}
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <h3 className={`font-semibold ${!notification.read ? 'text-gray-900' : 'text-gray-700'}`}>
+                              {notification.title}
+                            </h3>
+                            {!notification.read && (
+                              <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                            )}
+                            {getPriorityBadge(notification.priority)}
+                          </div>
+                          <p className="text-gray-600 text-sm mb-2">{notification.message}</p>
+                          <div className="flex items-center space-x-4 text-xs text-gray-500">
+                            <span>{formatTimestamp(notification.timestamp)}</span>
+                            {notification.amount && (
+                              <span className="font-medium">{formatCurrency(notification.amount)}</span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2 ml-4">
+                          {notification.actionUrl && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                markAsRead(notification.id);
+                                // In a real app, you'd navigate to the URL
+                                toast.success(`Navigating to ${notification.actionText}`);
+                              }}
+                            >
+                              {notification.actionText}
+                            </Button>
+                          )}
+                          
+                          <div className="flex items-center space-x-1">
+                            {!notification.read && (
+                              <button
+                                onClick={() => markAsRead(notification.id)}
+                                className="p-1 text-gray-400 hover:text-blue-600 rounded transition-colors"
+                                title="Mark as read"
+                              >
+                                <i className="ri-check-line" aria-hidden="true"></i>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeleteNotification(notification.id)}
+                              className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors"
+                              title="Delete notification"
+                            >
+                              <i className="ri-delete-bin-line" aria-hidden="true"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
 
                     {/* Quick Stats */}
                     {notifications.length > 0 && (

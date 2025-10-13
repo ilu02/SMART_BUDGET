@@ -76,7 +76,7 @@ export default function AddTransactionModal({
   ];
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<Transaction>({
-    id: '',
+    id: '', // Use empty string instead of 0
     description: '',
     category: '',
     amount: 0,
@@ -135,7 +135,7 @@ export default function AddTransactionModal({
   // Auto-categorization effect
   useEffect(() => {
     if (budgetPreferences.categorizeTransactions && formData.description && !formData.category) {
-      const suggestedCategory = suggestCategory(formData.description, formData.merchant);
+      const suggestedCategory = suggestCategory(formData.description, formData.merchant || '');
       if (suggestedCategory) {
         setFormData(prev => ({ ...prev, category: suggestedCategory }));
         toast.success(`Auto-categorized as "${suggestedCategory}"`);
@@ -147,14 +147,15 @@ export default function AddTransactionModal({
   useEffect(() => {
     if (isOpen) {
       if (transaction) {
+        const { id, userId, createdAt, updatedAt, ...transactionData } = transaction;
         setFormData({
           ...transaction,
-          amount: Math.abs(transaction.amount)
+          amount: Math.abs(transaction.amount) // Always show positive amount in form
         });
         setStep(1);
       } else {
         setFormData({
-          id: '',
+          id: '', // Use empty string instead of 0
           description: '',
           category: defaultCategory || '',
           amount: 0,
@@ -217,10 +218,10 @@ export default function AddTransactionModal({
   };
 
   const handleAddTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+    if (tagInput.trim() && !(formData.tags || []).includes(tagInput.trim())) {
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, tagInput.trim().toLowerCase()]
+        tags: [...(prev.tags || []), tagInput.trim().toLowerCase()]
       }));
       setTagInput('');
     }
@@ -229,7 +230,7 @@ export default function AddTransactionModal({
   const handleRemoveTag = (tagToRemove: string) => {
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: (prev.tags || []).filter(tag => tag !== tagToRemove)
     }));
   };
 
@@ -525,9 +526,9 @@ export default function AddTransactionModal({
           </div>
           
           {/* Display Tags */}
-          {formData.tags.length > 0 && (
+          {(formData.tags || []).length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {formData.tags.map((tag) => (
+              {(formData.tags || []).map((tag) => (
                 <span
                   key={tag}
                   className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
@@ -627,11 +628,11 @@ export default function AddTransactionModal({
               </div>
             )}
             
-            {formData.tags.length > 0 && (
+            {(formData.tags || []).length > 0 && (
               <div className="flex items-start justify-between">
                 <span className="text-sm text-gray-600">Tags:</span>
                 <div className="flex flex-wrap gap-1 max-w-xs">
-                  {formData.tags.map((tag) => (
+                  {(formData.tags || []).map((tag) => (
                     <span
                       key={tag}
                       className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800"

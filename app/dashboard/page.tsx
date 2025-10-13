@@ -59,7 +59,8 @@ export default function DashboardPage() {
         `Total Income,${totalIncome}`,
         `Total Expenses,${totalExpenses}`,
         `Net Balance,${netBalance}`,
-        `Export Date,"${new Date().toLocaleString()}"`
+        `Export Date,"${new Date().toLocaleString()}"`,
+        `Transaction Period,"All transactions (${transactions.length} total)"`
       ].join('\n');
 
       const finalContent = csvContent + '\n' + summaryContent;

@@ -40,9 +40,9 @@ export async function POST(request) {
       );
     }
 
-    if (!budgetData.category || budgetData.budget === undefined || budgetData.budget === null || !budgetData.icon || !budgetData.color) {
+    if (!budgetData.category || budgetData.budget === undefined || budgetData.budget === null || budgetData.budget <= 0 || !budgetData.icon || !budgetData.color) {
       return NextResponse.json(
-        { error: 'Category, budget, icon, and color are required' },
+        { error: 'Category, budget (must be > 0), icon, and color are required' },
         { status: 400 }
       );
     }
@@ -79,6 +79,14 @@ export async function PUT(request) {
     if (!id) {
       return NextResponse.json(
         { error: 'Budget ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate budget if provided
+    if (budgetData.budget !== undefined && (budgetData.budget === null || budgetData.budget <= 0)) {
+      return NextResponse.json(
+        { error: 'Budget must be > 0' },
         { status: 400 }
       );
     }

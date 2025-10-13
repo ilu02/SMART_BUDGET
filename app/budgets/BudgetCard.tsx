@@ -26,9 +26,10 @@ interface BudgetCardProps {
   budget: Budget;
   onEdit: () => void;
   onSave: (id: string, updates: Partial<Budget>) => void;
+  id?: string;
 }
 
-export default function BudgetCard({ budget, onEdit, onSave }: BudgetCardProps) {
+export default function BudgetCard({ budget, onEdit, onSave, id }: BudgetCardProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -37,7 +38,7 @@ export default function BudgetCard({ budget, onEdit, onSave }: BudgetCardProps) 
   const { formatCurrency } = useSettings();
   const { refreshBudgets, deleteBudget } = useBudgets();
   const router = useRouter();
-  const percentage = (budget.spent / budget.budget) * 100;
+  const percentage = budget.budget > 0 ? (budget.spent / budget.budget) * 100 : 0;
   const remaining = budget.budget - budget.spent;
   const isOverBudget = percentage > 100;
   const isNearLimit = percentage > 80 && percentage <= 100;

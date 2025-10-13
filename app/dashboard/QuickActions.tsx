@@ -1,18 +1,99 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import AddTransactionModal from '../../components/AddTransactionModal';
 import { useSettings } from '../contexts/SettingsContext';
+import { useTransactions } from '../contexts/TransactionContext';
+import toast from 'react-hot-toast';
 
 export default function QuickActions() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
-  // Change this line
-  const { budgetPreferences } = useSettings();
+  const { budgetPreferences, formatCurrency } = useSettings();
+  const { transactions } = useTransactions();
 
-  // And change this line to get the currency symbol from budgetPreferences
+  // Calculate current month amounts dynamically
+  const currentMonthData = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const currentMonthTransactions = transactions.filter(t => {
+      const transactionDate = new Date(t.date);
+      return transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear;
+    });
+
+    const income = currentMonthTransactions
+      .filter(t => t.amount > 0)
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const expenses = Math.abs(currentMonthTransactions
+      .filter(t => t.amount < 0)
+      .reduce((sum, t) => sum + t.amount, 0));
+
+    const net = income - expenses;
+
+    return { income, expenses, net };
+  }, [transactions]);
+
+  const handleExportData = () => {
+    if (transactions.length === 0) {
+      toast.error('No transactions to export');
+      return;
+    }
+
+    try {
+      // Create CSV content with more detailed information
+      const headers = ['Date', 'Description', 'Amount', 'Category', 'Type', 'Balance Impact'];
+      const csvContent = [
+        headers.join(','),
+        ...transactions.map(transaction => [
+          new Date(transaction.date).toLocaleDateString(),
+          `"${transaction.description}"`,
+          transaction.amount,
+          `"${transaction.category}"`,
+          transaction.type,
+          transaction.type === 'income' ? `+${transaction.amount}` : `-${transaction.amount}`
+        ].join(','))
+      ].join('\n');
+
+      // Add summary at the end
+      const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+      const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+      const netBalance = totalIncome - totalExpenses;
+
+      const summaryContent = [
+        '',
+        'SUMMARY',
+        `Total Income,${totalIncome}`,
+        `Total Expenses,${totalExpenses}`,
+        `Net Balance,${netBalance}`,
+        `Export Date,"${new Date().toLocaleString()}"`,
+        `Transaction Period,"All transactions (${transactions.length} total)"`
+      ].join('\n');
+
+      const finalContent = csvContent + '\n' + summaryContent;
+
+      // Create and download file
+      const blob = new Blob([finalContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `smart_budget_export_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success(`Exported ${transactions.length} transactions successfully!`);
+    } catch (error) {
+      toast.error('Failed to export data. Please try again.');
+      console.error('Export error:', error);
+    }
+  };
+
   const currencySymbol = budgetPreferences.currencySymbol || '$';
 
   const actions = [
@@ -42,7 +123,7 @@ export default function QuickActions() {
       description: 'Download your financial data',
       icon: 'ri-download-line',
       color: 'bg-orange-500 hover:bg-orange-600',
-      action: () => alert('Export feature coming soon!')
+      action: handleExportData
     }
   ];
 
@@ -73,17 +154,18 @@ export default function QuickActions() {
           <h3 className="font-medium text-gray-900 mb-2">This Month</h3>
           <div className="grid grid-cols-2 gap-4 text-center">
             <div>
-              {/* This is a static example, but in a real app, you would use a prop like this: */}
-              <p className="text-2xl font-bold text-green-600">+{currencySymbol}5,800</p>
+              <p className="text-2xl font-bold text-green-600">+{formatCurrency(currentMonthData.income)}</p>
               <p className="text-xs text-gray-500">Income</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-red-600">-{currencySymbol}4,000</p>
+              <p className="text-2xl font-bold text-red-600">-{formatCurrency(currentMonthData.expenses)}</p>
               <p className="text-xs text-gray-500">Expenses</p>
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-gray-200">
-            <p className="text-lg font-bold text-blue-600">+{currencySymbol}1,800 Net</p>
+            <p className={`text-lg font-bold ${currentMonthData.net >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              {currentMonthData.net >= 0 ? '+' : ''}{formatCurrency(currentMonthData.net)} Net
+            </p>
             <p className="text-xs text-gray-500">This month's savings</p>
           </div>
         </div>

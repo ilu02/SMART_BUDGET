@@ -114,10 +114,10 @@ const defaultProfile: ProfileSettings = {
   phone: '+1 (555) 123-4567',
   timezone: 'Eastern Time',
   language: 'English',
-  currency: 'USD - US Dollar ($)',
+  currency: 'ZMW - Zambian Kwacha (K)',
   profilePicture: undefined,
-  currencySymbol: '$',
-  currencyCode: 'USD'
+  currencySymbol: 'K',
+  currencyCode: 'ZMW'
 };
 
 const defaultBudgetPreferences: BudgetPreferences = {

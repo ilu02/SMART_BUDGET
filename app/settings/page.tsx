@@ -9,7 +9,6 @@ import BudgetPreferences from './BudgetPreferences';
 import SecuritySettings from './SecuritySettings';
 import AppearanceSettings from './AppearanceSettings';
 import DataSettings from './DataSettings';
-import SettingsTestPanel from '../../components/SettingsTestPanel';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
@@ -77,7 +76,6 @@ export default function SettingsPage() {
 
             {/* Content */}
             <div className="flex-1 p-8 settings-content">
-              <SettingsTestPanel />
               {renderActiveContent()}
             </div>
           </div>

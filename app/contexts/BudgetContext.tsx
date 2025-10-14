@@ -23,6 +23,7 @@ interface BudgetContextType {
   addBudget: (budget: Omit<Budget, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateBudget: (id: string, budget: Partial<Budget>) => Promise<void>;
   deleteBudget: (id: string) => Promise<void>;
+  rolloverBudget: (id: string) => Promise<void>;
   getBudgetByCategory: (category: string) => Budget | undefined;
   getTotalBudget: () => number;
   getTotalSpent: () => number;
@@ -167,6 +168,55 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const rolloverBudget = async (id: string) => {
+    if (!user?.id) {
+      toast.error('User not authenticated');
+      return;
+    }
+
+    try {
+      const budget = budgets.find(b => b.id === id);
+      if (!budget) {
+        toast.error('Budget not found');
+        return;
+      }
+
+      const remaining = budget.budget - budget.spent;
+      if (remaining <= 0) {
+        toast.error('No unused budget to rollover');
+        return;
+      }
+
+      // Add remaining amount to the budget amount
+      const newBudgetAmount = budget.budget + remaining;
+
+      const response = await fetch('/api/budgets', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id,
+          budget: newBudgetAmount,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setBudgets(prev => prev.map(budget =>
+          budget.id === id ? { ...budget, budget: newBudgetAmount } : budget
+        ));
+        toast.success(`Rollover successful! Added unused budget to next period.`);
+      } else {
+        toast.error(data.error || 'Failed to rollover budget');
+      }
+    } catch (error) {
+      console.error('Error rolling over budget:', error);
+      toast.error('Failed to rollover budget');
+    }
+  };
+
   const refreshBudgets = useCallback(async () => {
     await loadBudgets();
   }, [loadBudgets]);
@@ -200,6 +250,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         addBudget,
         updateBudget,
         deleteBudget,
+        rolloverBudget,
         getBudgetByCategory,
         getTotalBudget,
         getTotalSpent,

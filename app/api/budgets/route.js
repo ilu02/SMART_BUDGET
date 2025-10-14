@@ -56,7 +56,7 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Add budget error:', error);
-    
+
     // Handle unique constraint violation (category already exists for user)
     if (error.code === 'P2002') {
       return NextResponse.json(

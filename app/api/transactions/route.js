@@ -64,13 +64,13 @@ export async function POST(request) {
         // Large Transaction Alert Check: Only for expense type transactions
         if (transaction.type === 'expense' && transaction.amount >= largeThreshold) {
             const alert = createTransactionAlert(
-                transaction.amount, 
+                transaction.amount,
                 transaction.merchant || transaction.description, // Use merchant field if available, otherwise description
                 currencySymbol
             );
             notificationsToSend.push(alert);
         }
-        
+
         // NOTE: Additional alerts (like budget exceeded) would be checked here.
 
         // 4. Return transaction and any generated notifications

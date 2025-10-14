@@ -8,6 +8,7 @@ import { Card } from './ui/Card';
 import { useSettings } from '../app/contexts/SettingsContext';
 import { Transaction, useTransactions } from '../app/contexts/TransactionContext';
 import { useBudgets } from '../app/contexts/BudgetContext';
+import { useAuth } from '../app/contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 interface AddTransactionModalProps {
@@ -61,6 +62,7 @@ export default function AddTransactionModal({
   const { formatCurrency, budgetPreferences } = useSettings();
   const { addTransaction, updateTransaction, checkBudgetsExist } = useTransactions();
   const { budgets } = useBudgets();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [budgetsExist, setBudgetsExist] = useState(true);
 
@@ -84,6 +86,7 @@ export default function AddTransactionModal({
     merchant: '',
     tags: [],
     type: 'expense',
+    userId: user?.id || '',
     notes: ''
   });
   const [tagInput, setTagInput] = useState('');
@@ -163,6 +166,7 @@ export default function AddTransactionModal({
           merchant: '',
           tags: [],
           type: 'expense',
+          userId: user?.id || '',
           notes: '',
           budgetId: defaultBudgetId || undefined
         });
@@ -241,6 +245,7 @@ export default function AddTransactionModal({
     try {
       let finalAmount = formData.type === 'expense' ? -Math.abs(formData.amount) : Math.abs(formData.amount);
       let roundUpAmount = 0;
+      let autoSaveAmount = 0;
 
       // Apply round-up for expenses if enabled
       if (budgetPreferences.roundUpTransactions && formData.type === 'expense') {
@@ -249,7 +254,8 @@ export default function AddTransactionModal({
         roundUpAmount = roundedAmount - originalAmount;
 
         if (roundUpAmount > 0) {
-          finalAmount = -roundedAmount; // Use rounded amount for expense
+          // Keep original amount for expense, create separate savings transaction
+          // finalAmount remains as -originalAmount
           toast.success(`Rounded up by ${formatCurrency(roundUpAmount)} - saved to your account!`);
         }
       }
@@ -275,8 +281,46 @@ export default function AddTransactionModal({
         }
         success = true;
       } else {
-        // Corrected logic for adding a new transaction
+        // Add the main transaction first
         success = await addTransaction(transactionData);
+
+        // Round-up savings for expense transactions
+        if (success && formData.type === 'expense' && roundUpAmount > 0) {
+          const roundUpSavingsData = {
+            description: `Round-up savings from ${formData.description}`,
+            category: 'Savings',
+            amount: -roundUpAmount, // Negative for expense (savings)
+            date: formData.date,
+            type: 'expense' as const,
+            budgetId: undefined, // Savings don't go to a specific budget
+            notes: 'Round-up savings'
+          };
+
+          const roundUpSuccess = await addTransaction(roundUpSavingsData);
+          if (roundUpSuccess) {
+            toast.success(`Saved ${formatCurrency(roundUpAmount)} to your round-up savings!`);
+          }
+        }
+
+        // Auto-save functionality for income transactions
+        if (success && formData.type === 'income' && budgetPreferences.autoSavePercentage > 0) {
+          autoSaveAmount = (Math.abs(formData.amount) * budgetPreferences.autoSavePercentage) / 100;
+
+          const savingsTransactionData = {
+            description: `Auto-saved ${budgetPreferences.autoSavePercentage}% from ${formData.description}`,
+            category: 'Savings',
+            amount: -autoSaveAmount, // Negative for expense (savings)
+            date: formData.date,
+            type: 'expense' as const,
+            budgetId: undefined, // Savings don't go to a specific budget
+            notes: 'Auto-saved from income'
+          };
+
+          const savingsSuccess = await addTransaction(savingsTransactionData);
+          if (savingsSuccess) {
+            toast.success(`Auto-saved ${formatCurrency(autoSaveAmount)} to savings!`);
+          }
+        }
       }
 
       if (success) {

@@ -49,10 +49,27 @@ export default function BudgetCard({ budget, onEdit, onSave, id }: BudgetCardPro
     return 'text-green-600';
   };
 
-  const getProgressBarColor = () => {
-    if (isOverBudget) return 'bg-red-500';
-    if (isNearLimit) return 'bg-yellow-500';
-    return budget.color;
+  const getProgressBarGradient = () => {
+    if (isOverBudget) {
+      return 'bg-red-500';
+    }
+
+    // Create a smooth color transition based on percentage
+    const clampedPercentage = Math.min(percentage, 100);
+
+    if (clampedPercentage <= 25) {
+      return 'bg-gradient-to-r from-green-500 to-green-400';
+    } else if (clampedPercentage <= 40) {
+      return 'bg-gradient-to-r from-green-400 to-lime-400';
+    } else if (clampedPercentage <= 55) {
+      return 'bg-gradient-to-r from-lime-400 to-yellow-400';
+    } else if (clampedPercentage <= 70) {
+      return 'bg-gradient-to-r from-yellow-400 to-amber-400';
+    } else if (clampedPercentage <= 85) {
+      return 'bg-gradient-to-r from-amber-400 to-orange-400';
+    } else {
+      return 'bg-gradient-to-r from-orange-400 to-red-400';
+    }
   };
 
   const getLastTransactionText = () => {
@@ -139,8 +156,11 @@ export default function BudgetCard({ budget, onEdit, onSave, id }: BudgetCardPro
         <div className="mb-4">
           <div className="w-full bg-gray-200 rounded-full h-2.5">
             <div
-              className={`h-2.5 rounded-full ${getProgressBarColor()}`}
-              style={{ width: `${Math.min(percentage, 100)}%` }}
+              className={`h-2.5 rounded-full ${getProgressBarGradient()}`}
+              style={{
+                width: `${Math.min(percentage, 100)}%`,
+                minWidth: percentage > 0 ? '4px' : '0px'
+              }}
               role="progressbar"
               aria-valuenow={Math.min(percentage, 100)}
               aria-valuemin={0}

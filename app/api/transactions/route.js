@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getUserTransactions, addTransaction, updateTransaction, deleteTransaction, updateBudgetSpent, getUserSettings } from '../../../lib/database.js';
-import { createTransactionAlert } from '../../contexts/NotificationContext';
-import { isDemoMode, getDemoData } from '../../../lib/mockData.js'; 
+import { createTransactionAlert } from '../../contexts/NotificationContext'; 
 
 
 export async function GET(request) {
@@ -15,15 +14,6 @@ export async function GET(request) {
                 { error: 'User ID is required' },
                 { status: 400 }
             );
-        }
-
-        // Check if demo mode is enabled
-        if (isDemoMode()) {
-            const demoData = getDemoData();
-            return NextResponse.json({
-                success: true,
-                transactions: demoData.transactions
-            });
         }
 
         const transactions = await getUserTransactions(userId, budgetId);
@@ -58,27 +48,6 @@ export async function POST(request) {
                 { error: 'Amount, description, category, and type are required' },
                 { status: 400 }
             );
-        }
-
-        // Check if demo mode is enabled
-        if (isDemoMode()) {
-            // Return a mock transaction response for demo mode
-            const mockTransaction = {
-                id: `demo-transaction-${Date.now()}`,
-                ...transactionData,
-                userId,
-                date: transactionData.date || new Date().toISOString(),
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                merchant: transactionData.description, // Use description as merchant
-                budget: null // No budget association in demo mode
-            };
-
-            return NextResponse.json({
-                success: true,
-                transaction: mockTransaction,
-                notifications: [] // No notifications in demo mode
-            });
         }
 
         // 1. Fetch user settings for notification thresholds and currency
@@ -131,21 +100,6 @@ export async function PUT(request) {
             );
         }
 
-        // Check if demo mode is enabled
-        if (isDemoMode()) {
-            // Return a mock updated transaction response for demo mode
-            const mockTransaction = {
-                id,
-                ...transactionData,
-                updatedAt: new Date().toISOString()
-            };
-
-            return NextResponse.json({
-                success: true,
-                transaction: mockTransaction
-            });
-        }
-
         const transaction = await updateTransaction(id, transactionData);
 
         return NextResponse.json({
@@ -172,15 +126,6 @@ export async function DELETE(request) {
                 { error: 'Transaction ID is required' },
                 { status: 400 }
             );
-        }
-
-        // Check if demo mode is enabled
-        if (isDemoMode()) {
-            // Return success response for demo mode (no actual deletion needed)
-            return NextResponse.json({
-                success: true,
-                message: 'Transaction deleted successfully'
-            });
         }
 
         await deleteTransaction(id);

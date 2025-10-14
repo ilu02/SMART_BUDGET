@@ -28,6 +28,12 @@ export default function Header() {
   const notificationRef = useRef<HTMLDivElement>(null);
   const notificationTimeoutRef = useRef<NodeJS.Timeout>();
 
+  // Generate unique avatar URL for users without profile pictures
+  const getUniqueAvatar = (userId: string, userEmail: string) => {
+    // Use DiceBear avatars with user ID as seed for uniqueness
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}&backgroundColor=b6e3f4,c0aede,d1d4f9&scale=80`;
+  };
+
   // Handle scroll effect for sticky header
   useEffect(() => {
     const handleScroll = () => {

@@ -32,6 +32,12 @@ export default function ProfileSettings() {
     const { profile, updateProfile, updateBudgetPreferences } = useSettings();
     const { user, updateProfile: updateUserProfile } = useAuth();
 
+    // Generate unique avatar URL for users without profile pictures
+    const getUniqueAvatar = (userId: string, userEmail: string) => {
+        // Use DiceBear avatars with user ID as seed for uniqueness
+        return `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}&backgroundColor=b6e3f4,c0aede,d1d4f9&scale=80`;
+    };
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         

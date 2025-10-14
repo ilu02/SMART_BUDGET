@@ -10,7 +10,6 @@ const notificationGroups = [
     title: 'General Notifications',
     description: 'Basic app notifications and alerts',
     settings: [
-      { key: 'emailNotifications', label: 'Email Notifications', description: 'Receive notifications via email' },
       { key: 'pushNotifications', label: 'Push Notifications', description: 'Receive push notifications in your browser' }
     ]
   },
@@ -19,25 +18,16 @@ const notificationGroups = [
     description: 'Alerts related to your budgets and spending',
     settings: [
       { key: 'budgetAlerts', label: 'Budget Alerts', description: 'Get notified when approaching budget limits' },
-      { key: 'largeTransactions', label: 'Large Transactions', description: 'Alert for transactions over $500' }
+      { key: 'largeTransactions', label: 'Large Transactions', description: 'Alert for transactions over K500' }
     ]
   },
   {
     title: 'Reports & Reminders',
     description: 'Periodic reports and helpful reminders',
     settings: [
-      { key: 'weeklyReports', label: 'Weekly Reports', description: 'Weekly spending summary via email' },
       { key: 'monthlyReports', label: 'Monthly Reports', description: 'Monthly financial overview' },
       { key: 'goalReminders', label: 'Goal Reminders', description: 'Reminders about your financial goals' },
       { key: 'billReminders', label: 'Bill Reminders', description: 'Upcoming bill payment reminders' }
-    ]
-  },
-  {
-    title: 'Marketing & Updates',
-    description: 'Product updates and promotional content',
-    settings: [
-      { key: 'productUpdates', label: 'Product Updates', description: 'New features and app improvements' },
-      { key: 'marketingEmails', label: 'Marketing Emails', description: 'Promotional offers and tips' }
     ]
   }
 ];
@@ -185,24 +175,6 @@ export default function NotificationSettings() {
       <Card className="p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Notification Channels</h3>
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <i className="ri-mail-line text-blue-600" aria-hidden="true"></i>
-              </div>
-              <div>
-                <h4 className="font-medium text-gray-900">Email</h4>
-                <p className="text-sm text-gray-500">user@example.com</p>
-              </div>
-            </div>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-              notifications.emailNotifications 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-gray-100 text-gray-800'
-            }`}>
-              {notifications.emailNotifications ? 'Active' : 'Inactive'}
-            </span>
-          </div>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">

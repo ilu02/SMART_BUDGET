@@ -1,13 +1,16 @@
-// components/dashboard/SpendingAlerts.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
+// IMPORT NEXT.JS ROUTER (from feat-settings)
+import { useRouter } from 'next/navigation'; 
+// --------------------
+
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
-import { Alert } from './ui/Alert';
-import { useSettings } from './../app/contexts/SettingsContext';
-import { useBudgets } from './../app/contexts/BudgetContext';
-import { useNotifications, createBudgetAlert } from './../app/contexts/NotificationContext'; // Import Notification tools
+import { Alert } from './ui/Alert'; // From main
+import { useSettings } from '../app/contexts/SettingsContext';
+import { useBudgets } from '../app/contexts/BudgetContext';
+import { useNotifications, createBudgetAlert } from '../app/contexts/NotificationContext'; // Import Notification tools (from main)
 import toast from 'react-hot-toast';
 
 interface SpendingAlert {
@@ -25,31 +28,36 @@ interface SpendingAlert {
 export default function SpendingAlerts() {
     const { formatCurrency, budgetPreferences } = useSettings();
     const { budgets } = useBudgets();
-    const { addNotification, notifications } = useNotifications(); // Access notifications and adder
+    const { addNotification, notifications } = useNotifications(); // Access notifications and adder (from main)
+
+    // INITIALIZE ROUTER (from feat-settings)
+    const router = useRouter(); 
+    // -----------------
     
     const [alerts, setAlerts] = useState<SpendingAlert[]>([]);
     const [dismissedAlerts, setDismissedAlerts] = useState<number[]>([]);
     const [showAll, setShowAll] = useState(false);
-    
-    // FIX 2: Use a flag to bypass the double-execution in React Strict Mode on initial mount
+
+    // FIX 2: Use a flag to bypass the double-execution in React Strict Mode on initial mount (from main)
     const [hasRunAlerts, setHasRunAlerts] = useState(false);
 
     useEffect(() => {
-        // --- FIX 2: Skip the first run in development mode (Strict Mode) ---
+        // --- FIX 2: Skip the first run in development mode (Strict Mode) --- (from main)
         if (process.env.NODE_ENV === 'development' && !hasRunAlerts) {
             setHasRunAlerts(true);
             return;
         }
         // -------------------------------------------------------------------
         
+        // Generate alerts based on real budget data
         const generatedAlerts: SpendingAlert[] = [];
-        const currencySymbol = formatCurrency(1).substring(0, 1);
+        const currencySymbol = formatCurrency(1).substring(0, 1); // Get currency symbol (from main)
 
         budgets.forEach((budget, index) => {
             const percentage = (budget.spent / budget.budget) * 100;
             let alert: SpendingAlert | null = null;
-            
-            // FIX 1: Enhanced check for an existing UNREAD notification for this category
+
+            // FIX 1: Enhanced check for an existing UNREAD notification for this category (from main)
             const isAlreadyNotified = notifications.some(
                 // A persistent notification exists if it's a budget alert for this category AND is unread
                 n => n.type === 'budget' && n.category === budget.category && !n.read
@@ -71,7 +79,7 @@ export default function SpendingAlerts() {
                     color: `bg-${budget.color.split('-')[0]}-500`
                 };
                 
-                // Only create the persistent notification if one doesn't already exist
+                // Only create the persistent notification if one doesn't already exist (from main)
                 if (!isAlreadyNotified) {
                     addNotification(createBudgetAlert(
                         budget.category, 
@@ -97,7 +105,7 @@ export default function SpendingAlerts() {
                     color: `bg-${budget.color.split('-')[0]}-500`
                 };
                 
-                // Only create the persistent notification if one doesn't already exist
+                // Only create the persistent notification if one doesn't already exist (from main)
                 if (!isAlreadyNotified) {
                     addNotification(createBudgetAlert(
                         budget.category, 
@@ -132,7 +140,7 @@ export default function SpendingAlerts() {
 
         setAlerts(generatedAlerts);
         
-        // FIX 2: Update dependencies
+        // FIX 2: Update dependencies (merged)
     }, [budgets, formatCurrency, budgetPreferences.warningThreshold, addNotification, notifications, hasRunAlerts]); 
 
     const handleDismissAlert = (alertId: number) => {
@@ -145,6 +153,17 @@ export default function SpendingAlerts() {
         setDismissedAlerts(prev => [...prev, alertId]);
         toast.success('Alert snoozed for 24 hours');
     };
+    
+    // NEW HANDLER FUNCTION (from feat-settings)
+    const handleAdjustBudgets = () => {
+        router.push('/budgets'); // Navigates to the /budgets route
+    };
+    
+    // NEW HANDLER FUNCTION (from feat-settings)
+    const handleAlertSettings = () => {
+        router.push('/settings'); // Navigates to the /settings route
+    };
+    // ----------------------
 
     const visibleAlerts = alerts.filter(alert => !dismissedAlerts.includes(alert.id));
     const displayedAlerts = showAll ? visibleAlerts : visibleAlerts.slice(0, 3);
@@ -194,10 +213,10 @@ export default function SpendingAlerts() {
                 {displayedAlerts.map((alert) => (
                     <div key={alert.id} className={`relative overflow-hidden rounded-xl p-6 ${
                         alert.type === 'danger' 
-                          ? 'bg-gradient-to-r from-red-50 to-rose-50 border border-red-200' 
-                          : alert.type === 'warning' 
-                          ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200' 
-                          : 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200'
+                            ? 'bg-gradient-to-r from-red-50 to-rose-50 border border-red-200' 
+                            : alert.type === 'warning' 
+                            ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200' 
+                            : 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200'
                     } hover:shadow-md transition-all duration-200`}>
                         <div className="flex items-start justify-between">
                             <div className="flex items-start space-x-4">
@@ -215,10 +234,10 @@ export default function SpendingAlerts() {
                                         <div
                                             className={`h-2 rounded-full shadow-sm ${
                                                 alert.type === 'danger' 
-                                                  ? 'bg-gradient-to-r from-red-500 to-red-600' 
-                                                  : alert.type === 'warning' 
-                                                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500' 
-                                                  : 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                                                    ? 'bg-gradient-to-r from-red-500 to-red-600' 
+                                                    : alert.type === 'warning' 
+                                                    ? 'bg-gradient-to-r from-yellow-500 to-orange-500' 
+                                                    : 'bg-gradient-to-r from-blue-500 to-indigo-500'
                                             }`}
                                             style={{ width: `${Math.min(alert.percentage, 100)}%` }}
                                         ></div>
@@ -253,11 +272,13 @@ export default function SpendingAlerts() {
                 <div className="flex items-center justify-between">
                     <p className="text-sm text-gray-600">Need help managing your budget?</p>
                     <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm">
+                        {/* MODIFIED BUTTON with onClick handler (from feat-settings) */}
+                        <Button variant="outline" size="sm" onClick={handleAlertSettings}>
                             <i className="ri-settings-line mr-2" aria-hidden="true"></i>
                             Alert Settings
                         </Button>
-                        <Button size="sm">
+                        {/* ------------------------------------- */}
+                        <Button size="sm" onClick={handleAdjustBudgets}>
                             <i className="ri-edit-line mr-2" aria-hidden="true"></i>
                             Adjust Budgets
                         </Button>

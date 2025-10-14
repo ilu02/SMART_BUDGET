@@ -539,7 +539,7 @@ export default function CategoriesPage() {
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-600">Budget Progress</span>
                     <span className="font-medium">
-                      ${category.spent} / ${category.budget}
+                      {formatCurrency(category.spent)} / {formatCurrency(category.budget)}
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
@@ -556,14 +556,14 @@ export default function CategoriesPage() {
                   </div>
                   <div className="flex justify-between text-xs text-gray-500 mt-1">
                     <span>{((category.spent / category.budget) * 100).toFixed(1)}% used</span>
-                    <span>${(category.budget - category.spent).toFixed(2)} remaining</span>
+                    <span>{formatCurrency(category.budget - category.spent)} remaining</span>
                   </div>
                 </div>
               )}
 
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Transactions</span>
-                <span className="font-medium">${category.spent.toFixed(2)} spent</span>
+                <span className="font-medium">{formatCurrency(category.spent)} spent</span>
               </div>
 
               {!category.budget && (

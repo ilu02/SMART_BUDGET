@@ -97,14 +97,14 @@ export default function AddTransactionModal({
     
     // Category keywords mapping
     const categoryKeywords: Record<string, string[]> = {
-      'Food & Dining': ['food', 'restaurant', 'cafe', 'coffee', 'pizza', 'burger', 'grocery', 'supermarket', 'dining', 'lunch', 'dinner', 'breakfast', 'starbucks', 'mcdonalds', 'subway', 'kfc'],
-      'Transportation': ['gas', 'fuel', 'uber', 'lyft', 'taxi', 'bus', 'train', 'parking', 'car', 'vehicle', 'transport', 'metro', 'subway'],
-      'Entertainment': ['movie', 'cinema', 'netflix', 'spotify', 'game', 'entertainment', 'concert', 'theater', 'music', 'streaming'],
-      'Shopping': ['amazon', 'store', 'shop', 'mall', 'clothing', 'clothes', 'shoes', 'electronics', 'target', 'walmart'],
+      'Food & Dining': ['food', 'restaurant', 'cafe', 'coffee', 'pizza', 'burger', 'grocery', 'supermarket', 'dining', 'lunch', 'dinner', 'breakfast', 'kfc'],
+      'Transportation': ['gas', 'fuel', 'yango', 'taxi', 'bus', 'parking', 'car', 'vehicle', 'transport'],
+      'Entertainment': ['movie', 'cinema', 'netflix', 'spotify', 'game', 'entertainment', 'concert', 'music', 'streaming'],
+      'Shopping': ['amazon', 'store', 'shop', 'mall', 'clothing', 'clothes', 'shoes', 'electronics', 'pep', 'mud'],
       'Health & Fitness': ['doctor', 'hospital', 'pharmacy', 'medicine', 'gym', 'fitness', 'health', 'medical', 'dentist'],
-      'Utilities': ['electric', 'water', 'gas', 'internet', 'phone', 'utility', 'bill', 'power', 'electricity'],
+      'Utilities': ['electric', 'water', 'gas', 'internet', 'phone', 'utility', 'bill', 'power', 'electricity', 'zesco'],
       'Education': ['school', 'university', 'course', 'book', 'education', 'tuition', 'learning'],
-      'Travel': ['hotel', 'flight', 'travel', 'vacation', 'trip', 'booking', 'airbnb'],
+      'Travel': ['hotel', 'flight', 'travel', 'vacation', 'trip', 'booking'],
       'Insurance': ['insurance', 'premium', 'policy'],
       'Savings': ['savings', 'investment', 'deposit', 'transfer']
     };
@@ -135,7 +135,7 @@ export default function AddTransactionModal({
   // Auto-categorization effect
   useEffect(() => {
     if (budgetPreferences.categorizeTransactions && formData.description && !formData.category) {
-      const suggestedCategory = suggestCategory(formData.description, formData.merchant);
+      const suggestedCategory = suggestCategory(formData.description, formData.merchant || '');
       if (suggestedCategory) {
         setFormData(prev => ({ ...prev, category: suggestedCategory }));
         toast.success(`Auto-categorized as "${suggestedCategory}"`);
@@ -147,6 +147,7 @@ export default function AddTransactionModal({
   useEffect(() => {
     if (isOpen) {
       if (transaction) {
+        const { id, userId, createdAt, updatedAt, ...transactionData } = transaction;
         setFormData({
           ...transaction,
           amount: Math.abs(transaction.amount) // Always show positive amount in form
@@ -217,10 +218,10 @@ export default function AddTransactionModal({
   };
 
   const handleAddTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+    if (tagInput.trim() && !(formData.tags || []).includes(tagInput.trim())) {
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, tagInput.trim().toLowerCase()]
+        tags: [...(prev.tags || []), tagInput.trim().toLowerCase()]
       }));
       setTagInput('');
     }
@@ -229,7 +230,7 @@ export default function AddTransactionModal({
   const handleRemoveTag = (tagToRemove: string) => {
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: (prev.tags || []).filter(tag => tag !== tagToRemove)
     }));
   };
 
@@ -497,7 +498,7 @@ export default function AddTransactionModal({
             label="Merchant/Source"
             value={formData.merchant}
             onChange={(e) => setFormData(prev => ({ ...prev, merchant: e.target.value }))}
-            placeholder="e.g., Whole Foods, Tech Corp, Starbucks"
+            placeholder="e.g., Shoprite, Hungry Lion, Yango"
           />
         </div>
 
@@ -525,9 +526,9 @@ export default function AddTransactionModal({
           </div>
           
           {/* Display Tags */}
-          {formData.tags.length > 0 && (
+          {(formData.tags || []).length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {formData.tags.map((tag) => (
+              {(formData.tags || []).map((tag) => (
                 <span
                   key={tag}
                   className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
@@ -627,11 +628,11 @@ export default function AddTransactionModal({
               </div>
             )}
             
-            {formData.tags.length > 0 && (
+            {(formData.tags || []).length > 0 && (
               <div className="flex items-start justify-between">
                 <span className="text-sm text-gray-600">Tags:</span>
                 <div className="flex flex-wrap gap-1 max-w-xs">
-                  {formData.tags.map((tag) => (
+                  {(formData.tags || []).map((tag) => (
                     <span
                       key={tag}
                       className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800"

@@ -111,13 +111,13 @@ const defaultProfile: ProfileSettings = {
     firstName: 'John',
     lastName: 'Doe',
     email: 'john.doe@example.com',
-    phone: '+260 ', // Desired default from feat-settings
-    timezone: 'Central Africa Time', // Desired default from feat-settings
+    phone: '+260 ',
+    timezone: 'Central Africa Time',
     language: 'English',
-    currency: 'ZMW - Zambian Kwacha (K)', // Merging feat-settings format with main's symbol
+    currency: 'ZMW - Zambian Kwacha (K)',
     profilePicture: undefined,
-    currencySymbol: 'K', // Matches ZMW
-    currencyCode: 'ZMW' // Matches ZMW
+    currencySymbol: 'K',
+    currencyCode: 'ZMW'
 };
 
 const defaultBudgetPreferences: BudgetPreferences = {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 // IMPORT NEXT.JS ROUTER (from feat-settings)
-import { useRouter } from 'next/navigation'; 
+import { useRouter } from 'next/navigation';
 // --------------------
 
 import { Card } from './ui/Card';
@@ -33,7 +33,9 @@ export default function SpendingAlerts() {
     // INITIALIZE ROUTER (from feat-settings)
     const router = useRouter(); 
     // -----------------
-    
+
+
+
     const [alerts, setAlerts] = useState<SpendingAlert[]>([]);
     const [dismissedAlerts, setDismissedAlerts] = useState<number[]>([]);
     const [showAll, setShowAll] = useState(false);
@@ -57,16 +59,11 @@ export default function SpendingAlerts() {
             const percentage = (budget.spent / budget.budget) * 100;
             let alert: SpendingAlert | null = null;
 
-            // FIX 1: Enhanced check for an existing UNREAD notification for this category (from main)
-            const isAlreadyNotified = notifications.some(
-                // A persistent notification exists if it's a budget alert for this category AND is unread
-                n => n.type === 'budget' && n.category === budget.category && !n.read
-            );
-
             // ----------------------------------------------------
             // LOGIC FOR DANGER/EXCEEDED (>= 100%)
             // ----------------------------------------------------
             if (percentage >= 100) {
+                const threshold = 100;
                 alert = {
                     id: index + 1,
                     category: budget.category,
@@ -78,14 +75,20 @@ export default function SpendingAlerts() {
                     icon: budget.icon,
                     color: `bg-${budget.color.split('-')[0]}-500`
                 };
-                
-                // Only create the persistent notification if one doesn't already exist (from main)
-                if (!isAlreadyNotified) {
+
+                // Check for existing notification for this category and threshold
+                const existingNotification = notifications.find(
+                    n => n.type === 'budget' && n.category === budget.category && n.threshold === threshold
+                );
+
+                // Only create the persistent notification if one doesn't already exist
+                if (!existingNotification) {
                     addNotification(createBudgetAlert(
-                        budget.category, 
-                        budget.spent, 
-                        budget.budget, 
-                        currencySymbol
+                        budget.category,
+                        budget.spent,
+                        budget.budget,
+                        currencySymbol,
+                        threshold
                     ));
                 }
 
@@ -93,6 +96,7 @@ export default function SpendingAlerts() {
             // LOGIC FOR WARNING (>= Threshold)
             // ----------------------------------------------------
             } else if (percentage >= budgetPreferences.warningThreshold) {
+                const threshold = budgetPreferences.warningThreshold;
                 alert = {
                     id: index + 1,
                     category: budget.category,
@@ -104,14 +108,20 @@ export default function SpendingAlerts() {
                     icon: budget.icon,
                     color: `bg-${budget.color.split('-')[0]}-500`
                 };
-                
-                // Only create the persistent notification if one doesn't already exist (from main)
-                if (!isAlreadyNotified) {
+
+                // Check for existing notification for this category and threshold
+                const existingNotification = notifications.find(
+                    n => n.type === 'budget' && n.category === budget.category && n.threshold === threshold
+                );
+
+                // Only create the persistent notification if one doesn't already exist
+                if (!existingNotification) {
                     addNotification(createBudgetAlert(
-                        budget.category, 
-                        budget.spent, 
-                        budget.budget, 
-                        currencySymbol
+                        budget.category,
+                        budget.spent,
+                        budget.budget,
+                        currencySymbol,
+                        threshold
                     ));
                 }
 

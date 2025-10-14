@@ -10,7 +10,7 @@ export interface Notification {
     type: 'budget' | 'transaction' | 'bill' | 'goal' | 'system' | 'security';
     title: string;
     message: string;
-    timestamp: Date; 
+    timestamp: Date;
     read: boolean;
     priority: 'low' | 'medium' | 'high' | 'urgent';
     actionUrl?: string;
@@ -18,6 +18,7 @@ export interface Notification {
     category?: string;
     amount?: number;
     budget?: number; // Kept for server payload compatibility if needed
+    threshold?: number;
 }
 
 interface NotificationContextType {
@@ -172,7 +173,7 @@ export function useNotifications() {
 
 // --- Utility functions for creating common notification types (Used by your API routes) ---
 
-export const createBudgetAlert = (category: string, spent: number, budget: number, currency: string = '$') => ({
+export const createBudgetAlert = (category: string, spent: number, budget: number, currency: string = '$', threshold?: number) => ({
     type: 'budget' as const,
     title: `Budget Alert: ${category}`,
     message: `You've spent ${Math.round((spent / budget) * 100)}% of your ${category.toLowerCase()} budget (${currency}${spent} of ${currency}${budget})`,
@@ -181,7 +182,8 @@ export const createBudgetAlert = (category: string, spent: number, budget: numbe
     actionUrl: '/budgets',
     actionText: 'View Budget',
     category,
-    amount: spent
+    amount: spent,
+    threshold
 });
 
 export const createTransactionAlert = (amount: number, merchant: string, currency: string = '$') => ({

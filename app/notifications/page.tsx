@@ -177,11 +177,11 @@ export default function NotificationsPage() {
                     {/* Action Buttons */}
                     <div className="flex items-center justify-end">
                         <div className="flex space-x-3">
-                            <Button variant="outline" onClick={handleClearAllRead}>
+                            <Button variant="outline" size="sm" onClick={handleClearAllRead}>
                                 <i className="ri-delete-bin-line mr-2" aria-hidden="true"></i>
                                 Clear Read
                             </Button>
-                            <Button onClick={handleMarkAllAsRead}>
+                            <Button size="sm" onClick={handleMarkAllAsRead}>
                                 <i className="ri-check-double-line mr-2" aria-hidden="true"></i>
                                 Mark All Read
                             </Button>

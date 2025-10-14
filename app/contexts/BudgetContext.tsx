@@ -20,8 +20,8 @@ export interface Budget {
 
 interface BudgetContextType {
   budgets: Budget[];
-  addBudget: (budget: Omit<Budget, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateBudget: (id: string, budget: Partial<Budget>) => Promise<void>;
+  addBudget: (budget: Omit<Budget, 'id' | 'userId' | 'createdAt' | 'updatedAt'>, suppressToast?: boolean) => Promise<void>;
+  updateBudget: (id: string, budget: Partial<Budget>, suppressToast?: boolean) => Promise<void>;
   deleteBudget: (id: string) => Promise<void>;
   rolloverBudget: (id: string) => Promise<void>;
   getBudgetByCategory: (category: string) => Budget | undefined;
@@ -77,7 +77,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     }
   }, [user, isAuthenticated, loadBudgets]);
 
-  const addBudget = async (budgetData: Omit<Budget, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+  const addBudget = async (budgetData: Omit<Budget, 'id' | 'userId' | 'createdAt' | 'updatedAt'>, suppressToast = false) => {
     if (!user?.id) {
       toast.error('User not authenticated');
       return;
@@ -99,17 +99,23 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
 
       if (response.ok && data.success) {
         setBudgets(prev => [...prev, data.budget]);
-        toast.success('Budget added successfully!');
+        if (!suppressToast) {
+          toast.success('Budget added successfully!');
+        }
       } else {
-        toast.error(data.error || 'Failed to add budget');
+        if (!suppressToast) {
+          toast.error(data.error || 'Failed to add budget');
+        }
       }
     } catch (error) {
       console.error('Error adding budget:', error);
-      toast.error('Failed to add budget');
+      if (!suppressToast) {
+        toast.error('Failed to add budget');
+      }
     }
   };
 
-  const updateBudget = async (id: string, updates: Partial<Budget>) => {
+  const updateBudget = async (id: string, updates: Partial<Budget>, suppressToast = false) => {
     if (!user?.id) {
       toast.error('User not authenticated');
       return;
@@ -130,16 +136,22 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setBudgets(prev => prev.map(budget => 
+        setBudgets(prev => prev.map(budget =>
           budget.id === id ? { ...budget, ...updates } : budget
         ));
-        toast.success('Budget updated successfully!');
+        if (!suppressToast) {
+          toast.success('Budget updated successfully!');
+        }
       } else {
-        toast.error(data.error || 'Failed to update budget');
+        if (!suppressToast) {
+          toast.error(data.error || 'Failed to update budget');
+        }
       }
     } catch (error) {
       console.error('Error updating budget:', error);
-      toast.error('Failed to update budget');
+      if (!suppressToast) {
+        toast.error('Failed to update budget');
+      }
     }
   };
 

@@ -36,13 +36,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const savedUser = localStorage.getItem('user');
         const authToken = localStorage.getItem('authToken');
-        
+
         // Also check cookie as fallback
         const cookieToken = document.cookie
           .split('; ')
           .find(row => row.startsWith('authToken='))
           ?.split('=')[1];
-        
+
         if (savedUser && (authToken || cookieToken)) {
           setUser(JSON.parse(savedUser));
         }

@@ -158,7 +158,7 @@ const budgetTemplates: BudgetTemplate[] = [
 
 export default function BudgetPreferences() {
   const { budgetPreferences, updateBudgetPreferences, formatCurrency } = useSettings();
-  const { addBudget, budgets, refreshBudgets } = useBudgets();
+  const { addBudget, updateBudget, budgets, refreshBudgets } = useBudgets();
   const [newCategory, setNewCategory] = useState('');
   const [isApplyingTemplate, setIsApplyingTemplate] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<BudgetTemplate | null>(null);
@@ -263,23 +263,13 @@ export default function BudgetPreferences() {
             icon: categoryTemplate.icon,
             color: categoryTemplate.color,
             description: `${categoryTemplate.percentage}% of monthly income (${selectedTemplate.name})`
-          });
+          }, true);
         } else {
           // Update existing budget amount
-          const response = await fetch(`/api/budgets/${existingBudget.id}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              budget: budgetAmount,
-              description: `${categoryTemplate.percentage}% of monthly income (${selectedTemplate.name})`
-            }),
-          });
-          
-          if (!response.ok) {
-            throw new Error(`Failed to update budget for ${categoryTemplate.category}`);
-          }
+          await updateBudget(existingBudget.id, {
+            budget: budgetAmount,
+            description: `${categoryTemplate.percentage}% of monthly income (${selectedTemplate.name})`
+          }, true);
         }
       });
       

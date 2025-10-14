@@ -116,7 +116,7 @@ export default function DashboardPage() {
 
       if ((event.ctrlKey || event.metaKey)) {
         switch (event.key.toLowerCase()) {
-          case 'n':
+          case 'j':
             event.preventDefault();
             setIsAddTransactionOpen(true);
             break;
@@ -146,7 +146,7 @@ export default function DashboardPage() {
       icon: 'ri-subtract-line',
       variant: 'primary' as const,
       onClick: () => setIsAddTransactionOpen(true),
-      shortcut: 'Ctrl+N'
+      shortcut: 'Ctrl+J'
     },
     {
       label: 'Add Income',
@@ -213,7 +213,7 @@ export default function DashboardPage() {
               <span className="text-responsive-sm font-medium text-gray-700">Keyboard Shortcuts</span>
             </div>
             <div className="flex items-center space-x-4 text-xs text-gray-600">
-              <span><kbd className="px-2 py-1 bg-white rounded border">Ctrl+N</kbd> Add Expense</span>
+              <span><kbd className="px-2 py-1 bg-white rounded border">Ctrl+J</kbd> Add Expense</span>
               <span><kbd className="px-2 py-1 bg-white rounded border">Ctrl+I</kbd> Add Income</span>
               <span><kbd className="px-2 py-1 bg-white rounded border">Ctrl+A</kbd> Analytics</span>
               <span><kbd className="px-2 py-1 bg-white rounded border">Ctrl+E</kbd> Export</span>

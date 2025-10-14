@@ -35,13 +35,13 @@ export default function BudgetCard({ budget, onEdit, onSave, id }: BudgetCardPro
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const { formatCurrency } = useSettings();
-  const { refreshBudgets, deleteBudget } = useBudgets();
+  const { formatCurrency, budgetPreferences } = useSettings();
+  const { refreshBudgets, deleteBudget, rolloverBudget } = useBudgets();
   const router = useRouter();
   const percentage = budget.budget > 0 ? (budget.spent / budget.budget) * 100 : 0;
   const remaining = budget.budget - budget.spent;
   const isOverBudget = percentage > 100;
-  const isNearLimit = percentage > 80 && percentage <= 100;
+  const isNearLimit = percentage > budgetPreferences.warningThreshold && percentage <= 100;
 
   const getStatusColor = () => {
     if (isOverBudget) return 'text-red-600';
@@ -211,6 +211,15 @@ export default function BudgetCard({ budget, onEdit, onSave, id }: BudgetCardPro
             <i className="ri-history-line mr-2"></i>
             History
           </button>
+          {budgetPreferences.rolloverUnused && remaining > 0 && (
+            <button
+              onClick={() => rolloverBudget(budget.id)}
+              className="flex-1 bg-green-50 hover:bg-green-100 text-green-600 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap cursor-pointer btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
+            >
+              <i className="ri-arrow-right-line mr-2"></i>
+              Rollover
+            </button>
+          )}
           <button onClick={() => setIsDeleteConfirmOpen(true)} className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap cursor-pointer btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">
             <i className="ri-delete-bin-line mr-2"></i>
             Delete

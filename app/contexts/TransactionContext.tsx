@@ -177,12 +177,12 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
           color: categoryMapping[data.transaction.category]?.color || 'text-gray-600 bg-gray-50'
         };
         setTransactions(prev => [newTransaction, ...prev]);
-        
+
         // Refresh budgets if callback is set and this is an expense
         if (budgetRefreshCallback && transactionData.type === 'expense') {
           await budgetRefreshCallback();
         }
-        
+
         toast.success('Transaction added successfully!');
         return true;
       } else {

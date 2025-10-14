@@ -196,7 +196,7 @@ export default function NotificationsPage() {
                                 {filterOptions.map((option) => (
                                     <button
                                         key={option.value}
-                                        onClick={() => setFilter(option.value)}
+                                        onClick={() => setFilter(option.value as typeof filter)}
                                         className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                                             filter === option.value
                                                 ? 'bg-blue-100 text-blue-800'

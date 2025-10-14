@@ -15,7 +15,6 @@ export interface Transaction {
   budgetId?: string;
   createdAt?: string;
   updatedAt?: string;
-  // Legacy fields for compatibility
   merchant?: string;
   tags?: string[];
   notes?: string;
@@ -42,9 +41,6 @@ interface TransactionContextType {
   setBudgetRefreshCallback: (callback: () => Promise<void>) => void;
 }
 
-
-
-// Category to icon/color mapping
 const categoryMapping: Record<string, { icon: string; color: string }> = {
   'Food & Dining': { icon: 'ri-restaurant-line', color: 'text-blue-600 bg-blue-50' },
   'Transportation': { icon: 'ri-gas-station-line', color: 'text-teal-600 bg-teal-50' },
@@ -70,7 +66,6 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     setBudgetRefreshCallbackState(() => callback);
   }, []);
 
-  // Load transactions from database when user is authenticated
   const loadTransactions = useCallback(async () => {
     if (!user?.id) {
       setTransactions([]);
@@ -84,10 +79,9 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Add legacy fields for compatibility
         const transactionsWithLegacyFields = data.transactions.map((transaction: Transaction) => ({
           ...transaction,
-          merchant: transaction.description, // Use description as merchant for compatibility
+          merchant: transaction.description,
           tags: [transaction.category.toLowerCase()],
           icon: categoryMapping[transaction.category]?.icon || 'ri-more-line',
           color: categoryMapping[transaction.category]?.color || 'text-gray-600 bg-gray-50'
@@ -105,7 +99,6 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id]);
 
-  // Load transactions when user changes
   useEffect(() => {
     if (isAuthenticated && user) {
       loadTransactions();
@@ -116,59 +109,63 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
   }, [user, isAuthenticated, loadTransactions]);
 
   const checkBudgetsExist = useCallback(async (): Promise<boolean> => {
-    if (!user?.id) {
-      return false;
-    }
+    if (!user?.id) return false;
 
     try {
       const response = await fetch(`/api/budgets?userId=${user.id}`);
       const data = await response.json();
-      
-      if (response.ok && data.success) {
-        return data.budgets && data.budgets.length > 0;
-      }
-      return false;
+      return response.ok && data.success && data.budgets && data.budgets.length > 0;
     } catch (error) {
       console.error('Error checking budgets:', error);
       return false;
     }
   }, [user?.id]);
 
-  const addTransaction = async (transactionData: Omit<Transaction, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<boolean> => {
+  const addTransaction = async (
+    transactionData: Omit<Transaction, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+  ): Promise<boolean> => {
     if (!user?.id) {
       toast.error('User not authenticated');
       return false;
     }
 
-    // Check if budgets exist before allowing transaction creation
     const budgetsExist = await checkBudgetsExist();
     if (!budgetsExist) {
       toast.error('Create a budget first before adding incomes or expenses.');
       return false;
     }
 
-    // Ensure budgetId is provided for expenses
     if (transactionData.type === 'expense' && !transactionData.budgetId) {
       toast.error('Please select a budget for this expense.');
       return false;
     }
 
+    // --- FIX: Preserve the local time exactly as selected by the user ---
+    let correctedDateString = transactionData.date;
+
+    if (correctedDateString.includes('T') && !correctedDateString.endsWith('Z')) {
+      correctedDateString = correctedDateString + ':00';
+    } else if (!correctedDateString.includes('T')) {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      correctedDateString = `${correctedDateString}T${hours}:${minutes}:00`;
+    }
+
     try {
       const response = await fetch('/api/transactions', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...transactionData,
-          userId: user.id,
+          date: correctedDateString,
+          userId: user.id
         }),
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Add the new transaction to local state with legacy fields
         const newTransaction = {
           ...data.transaction,
           merchant: data.transaction.description,
@@ -178,7 +175,6 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
         };
         setTransactions(prev => [newTransaction, ...prev]);
 
-        // Refresh budgets if callback is set and this is an expense
         if (budgetRefreshCallback && transactionData.type === 'expense') {
           await budgetRefreshCallback();
         }
@@ -205,37 +201,31 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     try {
       const response = await fetch('/api/transactions', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id,
-          ...updates,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...updates }),
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Update local state
-        setTransactions(prev => prev.map(transaction => {
-          if (transaction.id === id) {
-            const updated = { ...transaction, ...updates };
-            // Update icon and color if category changed
-            if (updates.category) {
-              updated.icon = categoryMapping[updates.category]?.icon || 'ri-more-line';
-              updated.color = categoryMapping[updates.category]?.color || 'text-gray-600 bg-gray-50';
+        setTransactions(prev =>
+          prev.map(transaction => {
+            if (transaction.id === id) {
+              const updated = { ...transaction, ...updates };
+              if (updates.category) {
+                updated.icon = categoryMapping[updates.category]?.icon || 'ri-more-line';
+                updated.color = categoryMapping[updates.category]?.color || 'text-gray-600 bg-gray-50';
+              }
+              return updated;
             }
-            return updated;
-          }
-          return transaction;
-        }));
-        
-        // Refresh budgets if callback is set and this affects expenses
+            return transaction;
+          })
+        );
+
         if (budgetRefreshCallback && (updates.amount !== undefined || updates.budgetId !== undefined)) {
           await budgetRefreshCallback();
         }
-        
+
         toast.success('Transaction updated successfully!');
       } else {
         toast.error(data.error || 'Failed to update transaction');
@@ -253,21 +243,12 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch(`/api/transactions?id=${id}`, {
-        method: 'DELETE',
-      });
-
+      const response = await fetch(`/api/transactions?id=${id}`, { method: 'DELETE' });
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Update local state
         setTransactions(prev => prev.filter(transaction => transaction.id !== id));
-        
-        // Refresh budgets if callback is set
-        if (budgetRefreshCallback) {
-          await budgetRefreshCallback();
-        }
-        
+        if (budgetRefreshCallback) await budgetRefreshCallback();
         toast.success('Transaction deleted successfully!');
       } else {
         toast.error(data.error || 'Failed to delete transaction');
@@ -285,22 +266,19 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // Delete transactions one by one (could be optimized with a batch delete endpoint)
-      const deletePromises = ids.map(id => 
+      const deletePromises = ids.map(id =>
         fetch(`/api/transactions?id=${id}`, { method: 'DELETE' })
       );
-      
+
       const responses = await Promise.all(deletePromises);
       const results = await Promise.all(responses.map(r => r.json()));
-      
       const successfulDeletes = results.filter(r => r.success).length;
-      
+
       if (successfulDeletes > 0) {
-        // Update local state
         setTransactions(prev => prev.filter(transaction => !ids.includes(transaction.id)));
         toast.success(`${successfulDeletes} transaction${successfulDeletes > 1 ? 's' : ''} deleted successfully!`);
       }
-      
+
       if (successfulDeletes < ids.length) {
         toast.error(`Failed to delete ${ids.length - successfulDeletes} transaction(s)`);
       }
@@ -314,13 +292,11 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     await loadTransactions();
   }, [loadTransactions]);
 
-  const getTransactionsByCategory = (category: string): Transaction[] => {
-    return transactions.filter(transaction => transaction.category === category);
-  };
+  const getTransactionsByCategory = (category: string): Transaction[] =>
+    transactions.filter(transaction => transaction.category === category);
 
-  const getTransactionsByBudget = (budgetId: string): Transaction[] => {
-    return transactions.filter(transaction => transaction.budgetId === budgetId);
-  };
+  const getTransactionsByBudget = (budgetId: string): Transaction[] =>
+    transactions.filter(transaction => transaction.budgetId === budgetId);
 
   const getTransactionsByDateRange = (startDate: string, endDate: string): Transaction[] => {
     return transactions.filter(transaction => {
@@ -344,10 +320,9 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Add legacy fields for compatibility
         const transactionsWithLegacyFields = data.transactions.map((transaction: Transaction) => ({
           ...transaction,
-          merchant: transaction.description, // Use description as merchant for compatibility
+          merchant: transaction.description,
           tags: [transaction.category.toLowerCase()],
           icon: categoryMapping[transaction.category]?.icon || 'ri-more-line',
           color: categoryMapping[transaction.category]?.color || 'text-gray-600 bg-gray-50'
@@ -365,21 +340,13 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id]);
 
-  const getTotalIncome = (): number => {
-    return transactions
-      .filter(transaction => transaction.amount > 0)
-      .reduce((total, transaction) => total + transaction.amount, 0);
-  };
+  const getTotalIncome = (): number =>
+    transactions.filter(t => t.amount > 0).reduce((total, t) => total + t.amount, 0);
 
-  const getTotalExpenses = (): number => {
-    return Math.abs(transactions
-      .filter(transaction => transaction.amount < 0)
-      .reduce((total, transaction) => total + transaction.amount, 0));
-  };
+  const getTotalExpenses = (): number =>
+    Math.abs(transactions.filter(t => t.amount < 0).reduce((total, t) => total + t.amount, 0));
 
-  const getNetIncome = (): number => {
-    return getTotalIncome() - getTotalExpenses();
-  };
+  const getNetIncome = (): number => getTotalIncome() - getTotalExpenses();
 
   return (
     <TransactionContext.Provider

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Header from '../../components/Header';
 import BudgetCard from './BudgetCard';
 import AddBudgetModal from './AddBudgetModal';
@@ -28,11 +29,34 @@ export default function BudgetsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const searchParams = useSearchParams();
 
   const totalBudget = getTotalBudget();
   const totalSpent = getTotalSpent();
   const totalRemaining = getTotalRemaining();
   const overallProgress = getOverallProgress();
+
+  // Handle highlighting and scrolling to specific budget from notifications
+  useEffect(() => {
+    const highlightCategory = searchParams.get('highlight');
+    if (highlightCategory && budgets.length > 0) {
+      const budgetToHighlight = budgets.find(b => b.category === highlightCategory);
+      if (budgetToHighlight) {
+        // Scroll to the budget after a short delay to ensure DOM is ready
+        setTimeout(() => {
+          const budgetElement = document.getElementById(`budget-${budgetToHighlight.id}`);
+          if (budgetElement) {
+            budgetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Add temporary highlight effect
+            budgetElement.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.5)';
+            setTimeout(() => {
+              budgetElement.style.boxShadow = '';
+            }, 3000);
+          }
+        }, 500);
+      }
+    }
+  }, [searchParams, budgets]);
 
   const handleBudgetUpdate = async (id: string, updates: Partial<Budget>) => {
     try {
@@ -277,6 +301,7 @@ export default function BudgetsPage() {
           {budgets.map((budget) => (
             <BudgetCard
               key={budget.id}
+              id={`budget-${budget.id}`}
               budget={budget}
               onEdit={() => handleEditBudget(budget)}
               onSave={handleBudgetUpdate}

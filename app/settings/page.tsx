@@ -4,18 +4,19 @@
 import { useState } from 'react';
 import Header from '../../components/Header';
 import ProfileSettings from './ProfileSettings';
+import FinancialGoals from './FinancialGoals';
 import NotificationSettings from './NotificationSettings';
 import BudgetPreferences from './BudgetPreferences';
 import SecuritySettings from './SecuritySettings';
 import AppearanceSettings from './AppearanceSettings';
 import DataSettings from './DataSettings';
-import SettingsTestPanel from '../../components/SettingsTestPanel';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
 
   const tabs = [
     { id: 'profile', name: 'Profile', icon: 'ri-user-3-line' },
+    { id: 'goals', name: 'Financial Goals', icon: 'ri-trophy-line' },
     { id: 'notifications', name: 'Notifications', icon: 'ri-notification-3-line' },
     { id: 'budget', name: 'Budget Preferences', icon: 'ri-wallet-3-line' },
     { id: 'security', name: 'Security', icon: 'ri-shield-check-line' },
@@ -28,6 +29,8 @@ export default function SettingsPage() {
     switch (activeTab) {
       case 'profile':
         return <ProfileSettings />;
+      case 'goals':
+        return <FinancialGoals />;
       case 'notifications':
         return <NotificationSettings />;
       case 'budget':
@@ -77,7 +80,6 @@ export default function SettingsPage() {
 
             {/* Content */}
             <div className="flex-1 p-8 settings-content">
-              <SettingsTestPanel />
               {renderActiveContent()}
             </div>
           </div>

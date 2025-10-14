@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import {
     setJSONCookie,
@@ -107,18 +107,17 @@ const defaultNotifications: NotificationSettings = {
     productUpdates: true
 };
 
-// **MODIFIED:** Applying the user's desired default values here
 const defaultProfile: ProfileSettings = {
     firstName: 'John',
     lastName: 'Doe',
     email: 'john.doe@example.com',
-    phone: '+260 ', // Desired default
-    timezone: 'Central Africa Time', // Desired default
+    phone: '+260 ',
+    timezone: 'Central Africa Time',
     language: 'English',
-    currency: 'ZMW - Zambian Kwacha (ZK)', // Desired default
+    currency: 'ZMW - Zambian Kwacha (K)',
     profilePicture: undefined,
-    currencySymbol: 'K', // Matches ZMW
-    currencyCode: 'ZMW' // Matches ZMW
+    currencySymbol: 'K',
+    currencyCode: 'ZMW'
 };
 
 const defaultBudgetPreferences: BudgetPreferences = {

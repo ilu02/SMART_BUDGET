@@ -155,23 +155,6 @@ export default function SignupPage() {
           </Button>
         </form>
 
-        <div className="my-8 flex items-center">
-          <div className="flex-grow border-t border-gray-300"></div>
-          <span className="mx-4 text-sm text-gray-500">Or continue with</span>
-          <div className="flex-grow border-t border-gray-300"></div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <Button variant="outline" className="w-full" size="lg">
-            <i className="ri-google-fill text-red-500 mr-2" aria-hidden="true"></i>
-            Google
-          </Button>
-          <Button variant="outline" className="w-full" size="lg">
-            <i className="ri-apple-fill mr-2" aria-hidden="true"></i>
-            Apple
-          </Button>
-        </div>
-
         <p className="mt-8 text-center text-sm text-gray-600">
           Already have an account?{' '}
           <Link 

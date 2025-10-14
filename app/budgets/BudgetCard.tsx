@@ -19,15 +19,17 @@ interface Budget {
   userId: string;
   createdAt?: string;
   updatedAt?: string;
+  lastTransactionDate?: Date | null;
 }
 
 interface BudgetCardProps {
   budget: Budget;
   onEdit: () => void;
   onSave: (id: string, updates: Partial<Budget>) => void;
+  id?: string;
 }
 
-export default function BudgetCard({ budget, onEdit, onSave }: BudgetCardProps) {
+export default function BudgetCard({ budget, onEdit, onSave, id }: BudgetCardProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -36,7 +38,7 @@ export default function BudgetCard({ budget, onEdit, onSave }: BudgetCardProps) 
   const { formatCurrency } = useSettings();
   const { refreshBudgets, deleteBudget } = useBudgets();
   const router = useRouter();
-  const percentage = (budget.spent / budget.budget) * 100;
+  const percentage = budget.budget > 0 ? (budget.spent / budget.budget) * 100 : 0;
   const remaining = budget.budget - budget.spent;
   const isOverBudget = percentage > 100;
   const isNearLimit = percentage > 80 && percentage <= 100;
@@ -51,6 +53,25 @@ export default function BudgetCard({ budget, onEdit, onSave }: BudgetCardProps) 
     if (isOverBudget) return 'bg-red-500';
     if (isNearLimit) return 'bg-yellow-500';
     return budget.color;
+  };
+
+  const getLastTransactionText = () => {
+    if (!budget.lastTransactionDate) {
+      return 'No transactions yet';
+    }
+
+    const now = new Date();
+    const lastDate = new Date(budget.lastTransactionDate);
+    const diffTime = Math.abs(now.getTime() - lastDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) {
+      return '1 day ago';
+    } else if (diffDays === 0) {
+      return 'Today';
+    } else {
+      return `${diffDays} days ago`;
+    }
   };
 
   const handleViewTransactions = () => {
@@ -214,7 +235,7 @@ export default function BudgetCard({ budget, onEdit, onSave }: BudgetCardProps) 
               </div>
               <div>
                 <span className="text-gray-500">Last Transaction</span>
-                <p className="font-medium text-gray-900">2 days ago</p>
+                <p className="font-medium text-gray-900">{getLastTransactionText()}</p>
               </div>
             </div>
           </div>

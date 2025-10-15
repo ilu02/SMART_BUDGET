@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import {
     setJSONCookie,
@@ -147,15 +147,23 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const [profile, setProfile] = useState<ProfileSettings>(defaultProfile);
     const [loading, setLoading] = useState(true);
 
-    // Function to load user profile from database
+    const getUserLocalStorageKey = (key: string) => user?.id ? `${key}_${user.id}` : key;
+
+    const parseUserName = (name: string) => {
+        if (!name) return { firstName: 'John', lastName: 'Doe' };
+        const parts = name.trim().split(' ');
+        return {
+            firstName: parts[0],
+            lastName: parts.slice(1).join(' ')
+        };
+    };
+
     const loadUserProfileFromDatabase = async (userId: string) => {
         try {
             const response = await fetch(`/api/user/profile?userId=${userId}`);
             if (response.ok) {
                 const data = await response.json();
-                if (data.user) {
-                    return data.user;
-                }
+                return data.user || null;
             }
             return null;
         } catch (error) {
@@ -164,62 +172,31 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    // Function to parse name into firstName and lastName
-    const parseUserName = (name: string) => {
-        if (!name) return { firstName: 'John', lastName: 'Doe' };
-        
-        const parts = name.trim().split(' ');
-        if (parts.length === 1) {
-            return { firstName: parts[0], lastName: '' };
-        }
-        return {
-            firstName: parts[0],
-            lastName: parts.slice(1).join(' ')
-        };
-    };
-
-    // --- Load Settings on Mount ---
     useEffect(() => {
         const loadSettings = async () => {
+            setLoading(true);
             try {
-                setLoading(true);
+                // Appearance from cookies
+                const appearanceCookie = getJSONCookie<AppearanceSettings>(
+                    getUserCookieName('appearanceSettings', user?.id)
+                );
+                if (appearanceCookie) setAppearance(prev => ({ ...prev, ...appearanceCookie }));
 
-                // Load appearance settings from cookies
-                const userAppearanceCookieName = getUserCookieName('appearanceSettings', user?.id);
-                const savedAppearance = getJSONCookie<AppearanceSettings>(userAppearanceCookieName);
+                // Notifications, budgetPreferences, profile from user-specific localStorage
+                const savedNotifications = localStorage.getItem(getUserLocalStorageKey('notificationSettings'));
+                if (savedNotifications) setNotifications(prev => ({ ...prev, ...JSON.parse(savedNotifications) }));
 
-                if (savedAppearance) {
-                    setAppearance({
-                        ...defaultAppearance,
-                        ...savedAppearance
-                    });
-                }
+                const savedBudgetPrefs = localStorage.getItem(getUserLocalStorageKey('budgetPreferences'));
+                if (savedBudgetPrefs) setBudgetPreferences(prev => ({ ...prev, ...JSON.parse(savedBudgetPrefs) }));
 
-                // Load notifications and budget preferences from localStorage
-                const savedNotifications = localStorage.getItem('notificationSettings');
-                const savedBudgetPreferences = localStorage.getItem('budgetPreferences');
-                const savedProfile = localStorage.getItem('profileSettings');
+                const savedProfile = localStorage.getItem(getUserLocalStorageKey('profileSettings'));
 
-                if (savedNotifications) {
-                    setNotifications(prev => ({ ...prev, ...JSON.parse(savedNotifications) }));
-                }
-                if (savedBudgetPreferences) {
-                    const parsed = JSON.parse(savedBudgetPreferences);
-                    setBudgetPreferences(prev => ({
-                        ...prev,
-                        ...parsed
-                    }));
-                }
-
-                // CRITICAL: Load profile data - prioritize database over localStorage
+                // Load from database if user exists
                 if (user?.id) {
-                    // Try to load from database first
                     const dbUser = await loadUserProfileFromDatabase(user.id);
-                    
                     if (dbUser) {
-                        // User found in database - use database data
                         const nameParts = parseUserName(dbUser.name);
-                        const dbProfile = {
+                        const dbProfile: ProfileSettings = {
                             firstName: nameParts.firstName,
                             lastName: nameParts.lastName,
                             email: dbUser.email || defaultProfile.email,
@@ -231,27 +208,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                             currencyCode: dbUser.currencyCode || defaultProfile.currencyCode,
                             profilePicture: dbUser.avatar || defaultProfile.profilePicture
                         };
-                        
                         setProfile(dbProfile);
-                        // Also save to localStorage for offline access
-                        localStorage.setItem('profileSettings', JSON.stringify(dbProfile));
+                        localStorage.setItem(getUserLocalStorageKey('profileSettings'), JSON.stringify(dbProfile));
                     } else if (savedProfile) {
-                        // Fallback to localStorage if database fails
-                        const parsed = JSON.parse(savedProfile);
-                        setProfile(prev => ({
-                            ...prev,
-                            ...parsed
-                        }));
+                        setProfile(prev => ({ ...prev, ...JSON.parse(savedProfile) }));
                     }
                 } else if (savedProfile) {
-                    // No user but have saved profile in localStorage
-                    const parsed = JSON.parse(savedProfile);
-                    setProfile(prev => ({
-                        ...prev,
-                        ...parsed
-                    }));
+                    setProfile(prev => ({ ...prev, ...JSON.parse(savedProfile) }));
                 }
-
             } catch (error) {
                 console.error('Error loading settings:', error);
             } finally {
@@ -262,96 +226,65 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         loadSettings();
     }, [user?.id]);
 
-    // --- State Update Functions ---
-    const updateAppearance = (settings: Partial<AppearanceSettings>) => {
-        setAppearance(prev => ({ ...prev, ...settings }));
-    };
+    // --- Update functions ---
+    const updateAppearance = (settings: Partial<AppearanceSettings>) => setAppearance(prev => ({ ...prev, ...settings }));
+    const updateNotifications = (settings: Partial<NotificationSettings>) => setNotifications(prev => ({ ...prev, ...settings }));
+    const updateBudgetPreferences = (settings: Partial<BudgetPreferences>) => setBudgetPreferences(prev => ({ ...prev, ...settings }));
+    const updateProfile = (settings: Partial<ProfileSettings>) => setProfile(prev => ({ ...prev, ...settings }));
 
-    const updateNotifications = (settings: Partial<NotificationSettings>) => {
-        setNotifications(prev => ({ ...prev, ...settings }));
-    };
-
-    const updateBudgetPreferences = (settings: Partial<BudgetPreferences>) => {
-        setBudgetPreferences(prev => ({ ...prev, ...settings }));
-    };
-
-    const updateProfile = (settings: Partial<ProfileSettings>) => {
-        setProfile(prev => ({ ...prev, ...settings }));
-    };
-
-    // --- Persistence Effects ---
+    // --- Persistence ---
     useEffect(() => {
         if (user?.id) {
             try {
-                const userAppearanceCookieName = getUserCookieName('appearanceSettings', user.id);
-                setJSONCookie(userAppearanceCookieName, appearance, APPEARANCE_COOKIE_OPTIONS);
-            } catch (error) {
-                console.error('Error saving appearance settings to cookies:', error);
-            }
+                setJSONCookie(getUserCookieName('appearanceSettings', user.id), appearance, APPEARANCE_COOKIE_OPTIONS);
+            } catch (error) { console.error(error); }
         }
     }, [appearance, user?.id]);
 
     useEffect(() => {
+        if (!user?.id) return;
         try {
-            localStorage.setItem('notificationSettings', JSON.stringify(notifications));
-            localStorage.setItem('budgetPreferences', JSON.stringify(budgetPreferences));
-            localStorage.setItem('profileSettings', JSON.stringify(profile));
+            localStorage.setItem(getUserLocalStorageKey('notificationSettings'), JSON.stringify(notifications));
+            localStorage.setItem(getUserLocalStorageKey('budgetPreferences'), JSON.stringify(budgetPreferences));
+            localStorage.setItem(getUserLocalStorageKey('profileSettings'), JSON.stringify(profile));
         } catch (error) {
-            console.error('Error saving settings to localStorage:', error);
+            console.error(error);
         }
-    }, [notifications, budgetPreferences, profile]);
+    }, [notifications, budgetPreferences, profile, user?.id]);
 
-    // --- Utility Functions ---
-    const formatCurrency = (amount: number): string => {
+    const formatCurrency = (amount: number) => {
         const { currencySymbol, currencyPosition, decimalPlaces, thousandsSeparator, decimalSeparator } = budgetPreferences;
-
         const absAmount = Math.abs(amount);
         const parts = absAmount.toFixed(decimalPlaces).split('.');
-        
         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator);
-        
-        const formattedNumber = parts.join(decimalSeparator);
-        
-        const formattedAmount = currencyPosition === 'before'
-            ? `${currencySymbol}${formattedNumber}`
-            : `${formattedNumber}${currencySymbol}`;
-
-        return amount < 0 ? `-${formattedAmount}` : formattedAmount;
+        const formatted = parts.join(decimalSeparator);
+        return amount < 0 ? `-${currencyPosition === 'before' ? currencySymbol + formatted : formatted + currencySymbol}`
+                          : currencyPosition === 'before' ? currencySymbol + formatted : formatted + currencySymbol;
     };
 
-    const getCurrencySymbol = (): string => {
-        return budgetPreferences.currencySymbol;
-    };
+    const getCurrencySymbol = () => budgetPreferences.currencySymbol;
 
     const resetSettings = () => {
         setAppearance(defaultAppearance);
         setNotifications(defaultNotifications);
         setBudgetPreferences(defaultBudgetPreferences);
         setProfile(defaultProfile);
-        
+
         if (user?.id) {
-            const userAppearanceCookieName = getUserCookieName('appearanceSettings', user.id);
-            deleteCookie(userAppearanceCookieName);
+            deleteCookie(getUserCookieName('appearanceSettings', user.id));
+            localStorage.removeItem(getUserLocalStorageKey('notificationSettings'));
+            localStorage.removeItem(getUserLocalStorageKey('budgetPreferences'));
+            localStorage.removeItem(getUserLocalStorageKey('profileSettings'));
         }
-        
-        localStorage.removeItem('notificationSettings');
-        localStorage.removeItem('budgetPreferences');
-        localStorage.removeItem('profileSettings');
     };
 
     const clearUserSettings = () => {
         setAppearance(defaultAppearance);
-        
-        if (user?.id) {
-            const userAppearanceCookieName = getUserCookieName('appearanceSettings', user.id);
-            deleteCookie(userAppearanceCookieName);
-        }
+        if (user?.id) deleteCookie(getUserCookieName('appearanceSettings', user.id));
     };
 
     useEffect(() => {
-        if (!user) {
-            setAppearance(defaultAppearance);
-        }
+        if (!user) setProfile(defaultProfile);
     }, [user]);
 
     return (
@@ -380,8 +313,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
 export function useSettings() {
     const context = useContext(SettingsContext);
-    if (context === undefined) {
-        throw new Error('useSettings must be used within a SettingsProvider');
-    }
+    if (!context) throw new Error('useSettings must be used within a SettingsProvider');
     return context;
 }

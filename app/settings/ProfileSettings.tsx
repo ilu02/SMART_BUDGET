@@ -10,71 +10,49 @@ const timezones = [
     'Mountain Time',
     'Pacific Time',
     'GMT',
-    'Central Africa Time', // Ensured this option is available
-];
-
-const languages = ['English', 'Spanish', 'French', 'German', 'Mandarin'];
-
-const currencies = [
-    'USD - US Dollar ($)',
-    'EUR - Euro (€)',
-    'GBP - British Pound (£)',
-    'ZAR - South African Rand (R)',
-    'ZMW - Zambian Kwacha (ZK)',
-    'BWP - Botswana Pula (P)',
-    'NAD - Namibian Dollar (N$)',
+    'Central Africa Time',
 ];
 
 export default function ProfileSettings() {
     const [isEditing, setIsEditing] = useState(false);
     const [originalProfile, setOriginalProfile] = useState<any>(null);
     const [saving, setSaving] = useState(false);
-    const { profile, updateProfile, updateBudgetPreferences } = useSettings();
+    const { profile, updateProfile, updateBudgetPreferences, loading } = useSettings();
     const { user, updateProfile: updateUserProfile } = useAuth();
+    const [toastShown, setToastShown] = useState(false);
 
-    // Generate unique avatar URL for users without profile pictures
-    const getUniqueAvatar = (userId: string, userEmail: string) => {
-        // Use DiceBear avatars with user ID as seed for uniqueness
-        return `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}&backgroundColor=b6e3f4,c0aede,d1d4f9&scale=80`;
-    };
+    // Show loading state
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-gray-600">Loading profile...</span>
+            </div>
+        );
+    }
+
+    // Show message if user is not authenticated
+    if (!user) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="text-center">
+                    <i className="ri-user-unfollow-line text-6xl text-gray-400 mb-4"></i>
+                    <h2 className="text-xl font-semibold text-gray-700">Authentication Required</h2>
+                    <p className="text-gray-500 mt-2">Please log in to access profile settings.</p>
+                </div>
+            </div>
+        );
+    }
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        
-        // Update the profile based on the input change
         updateProfile({ [name]: value });
-        
-        // If currency is changed, also update budget preferences
-        if (name === 'currency') {
-            const currencyMap: { [key: string]: { symbol: string; code: string } } = {
-                'USD - US Dollar ($)': { symbol: '$', code: 'USD' },
-                'EUR - Euro (€)': { symbol: '€', code: 'EUR' },
-                'GBP - British Pound (£)': { symbol: '£', code: 'GBP' },
-                'ZAR - South African Rand (R)': { symbol: 'R', code: 'ZAR' },
-                'ZMW - Zambian Kwacha (ZK)': { symbol: 'K', code: 'ZMW' },
-                'BWP - Botswana Pula (P)': { symbol: 'P', code: 'BWP' },
-                'NAD - Namibian Dollar (N$)': { symbol: 'N$', code: 'NAD' },
-            };
-            
-            const selectedCurrency = currencyMap[value];
-            if (selectedCurrency) {
-                // Update budget preferences
-                updateBudgetPreferences({
-                    currency: selectedCurrency.code,
-                    currencySymbol: selectedCurrency.symbol,
-                });
-                
-                // Update profile with currency details
-                updateProfile({
-                    currency: value, 
-                    currencySymbol: selectedCurrency.symbol,
-                    currencyCode: selectedCurrency.code,
-                });
-            }
-        }
     };
 
     const handleSave = async () => {
+        // Prevent multiple saves
+        if (saving) return;
+        
         // Basic validation
         if (!profile.firstName.trim() || !profile.lastName.trim()) {
             toast.error('First name and last name are required');
@@ -93,48 +71,99 @@ export default function ProfileSettings() {
             return;
         }
 
-        if (!user) {
-            toast.error('User not found');
-            return;
-        }
-
         setSaving(true);
+        setToastShown(false); // Reset toast state
+
         try {
+            // Prepare ALL profile data to send to backend
+            const profileData = {
+                userId: user.id,
+                name: `${profile.firstName} ${profile.lastName}`.trim(),
+                email: profile.email,
+                avatar: profile.profilePicture,
+                phone: profile.phone || '',
+                timezone: profile.timezone || 'Central Africa Time',
+                language: 'English',
+                currency: 'ZMW - Zambian Kwacha (ZK)',
+                currencySymbol: 'K',
+                currencyCode: 'ZMW'
+            };
+
+            console.log('Saving profile data:', profileData);
+
             // Update user profile in database
             const response = await fetch('/api/user/profile', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    userId: user.id,
-                    name: `${profile.firstName} ${profile.lastName}`.trim(),
-                    email: profile.email,
-                    avatar: profile.profilePicture
-                }),
+                body: JSON.stringify(profileData),
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                // Update the user in AuthContext
-                updateUserProfile(data.user);
+                // Update the user in AuthContext with complete data from backend
+                if (updateUserProfile) {
+                    updateUserProfile(data.user);
+                }
                 
-                // Save the updated profile to localStorage via the updateProfile in SettingsContext
-                // (Note: This is now handled in SettingsContext.tsx via the updateProfile wrapper)
+                // Update local state with all values from the response
+                const nameParts = parseUserName(data.user.name);
+                const updatedProfile = {
+                    firstName: nameParts.firstName,
+                    lastName: nameParts.lastName,
+                    email: data.user.email,
+                    phone: data.user.phone || '',
+                    timezone: data.user.timezone || 'Central Africa Time',
+                    language: data.user.language || 'English',
+                    currency: data.user.currency || 'ZMW - Zambian Kwacha (ZK)',
+                    currencySymbol: data.user.currencySymbol || 'K',
+                    currencyCode: data.user.currencyCode || 'ZMW',
+                    profilePicture: data.user.avatar
+                };
+                
+                updateProfile(updatedProfile);
+                
+                // Update budget preferences with fixed currency
+                updateBudgetPreferences({
+                    currency: 'ZMW',
+                    currencySymbol: 'K',
+                });
 
                 setIsEditing(false);
                 setOriginalProfile(null);
-                toast.success('Profile updated successfully!');
+                
+                // Show success toast only once with a unique ID
+                if (!toastShown) {
+                    toast.success('Profile updated successfully!', { id: 'profile-update-success' });
+                    setToastShown(true);
+                }
+                
             } else {
-                toast.error(data.error || 'Failed to update profile');
+                console.error('API Error:', data);
+                toast.error(data.error || 'Failed to update profile', { id: 'profile-update-error' });
             }
         } catch (error) {
             console.error('Error updating profile:', error);
-            toast.error('Failed to update profile. Please try again.');
+            toast.error('Failed to update profile. Please try again.', { id: 'profile-update-error' });
         } finally {
             setSaving(false);
         }
+    };
+
+    // Helper function to parse name into first and last name
+    const parseUserName = (name: string) => {
+        if (!name) return { firstName: 'John', lastName: 'Doe' };
+        
+        const parts = name.trim().split(' ');
+        if (parts.length === 1) {
+            return { firstName: parts[0], lastName: '' };
+        }
+        return {
+            firstName: parts[0],
+            lastName: parts.slice(1).join(' ')
+        };
     };
 
     const handleEdit = () => {
@@ -159,19 +188,19 @@ export default function ProfileSettings() {
         // Validate file type
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
         if (!allowedTypes.includes(file.type)) {
-            toast.error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.');
+            toast.error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.', { id: 'profile-picture-error' });
             return;
         }
 
         // Check file size (1MB limit)
         if (file.size > 1024 * 1024) {
-            toast.error('File size too large. Maximum size is 1MB.');
+            toast.error('File size too large. Maximum size is 1MB.', { id: 'profile-picture-error' });
             return;
         }
 
         try {
             // Show loading state
-            const loadingToast = toast.loading('Uploading profile picture...');
+            const loadingToast = toast.loading('Uploading profile picture...', { id: 'profile-picture-upload' });
 
             // Create form data
             const formData = new FormData();
@@ -190,13 +219,127 @@ export default function ProfileSettings() {
             if (response.ok && data.success) {
                 // Update profile with the new image URL
                 updateProfile({ profilePicture: data.url });
+                
+                // Also update the avatar in the user profile
+                const profileData = {
+                    userId: user.id,
+                    name: `${profile.firstName} ${profile.lastName}`.trim(),
+                    email: profile.email,
+                    avatar: data.url,
+                    phone: profile.phone || '',
+                    timezone: profile.timezone || 'Central Africa Time',
+                    language: 'English',
+                    currency: 'ZMW - Zambian Kwacha (ZK)',
+                    currencySymbol: 'K',
+                    currencyCode: 'ZMW'
+                };
+
+                // Update user profile in database with new avatar
+                await fetch('/api/user/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(profileData),
+                });
+
                 toast.success('Profile picture updated!', { id: loadingToast });
             } else {
                 toast.error(data.error || 'Failed to upload profile picture', { id: loadingToast });
             }
         } catch (error) {
             console.error('Error uploading profile picture:', error);
-            toast.error('Failed to upload profile picture. Please try again.');
+            toast.error('Failed to upload profile picture. Please try again.', { id: 'profile-picture-error' });
+        }
+    };
+
+    const handleRemoveProfilePicture = async () => {
+        if (!user?.id) return;
+
+        updateProfile({ profilePicture: undefined });
+        
+        // Also update the database
+        const profileData = {
+            userId: user.id,
+            name: `${profile.firstName} ${profile.lastName}`.trim(),
+            email: profile.email,
+            avatar: null,
+            phone: profile.phone || '',
+            timezone: profile.timezone || 'Central Africa Time',
+            language: 'English',
+            currency: 'ZMW - Zambian Kwacha (ZK)',
+            currencySymbol: 'K',
+            currencyCode: 'ZMW'
+        };
+        
+        try {
+            await fetch('/api/user/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(profileData),
+            });
+            toast.success('Profile picture removed', { id: 'profile-picture-remove' });
+        } catch (error) {
+            console.error('Error removing profile picture:', error);
+            toast.error('Failed to remove profile picture', { id: 'profile-picture-error' });
+        }
+    };
+
+    const handleResetToDefaults = async () => {
+        if (!user?.id) return;
+
+        if (confirm('Are you sure you want to reset your profile to default values?')) {
+            const defaultProfile = {
+                firstName: 'John',
+                lastName: 'Doe',
+                email: 'john.doe@example.com',
+                phone: '+260 ',
+                timezone: 'Central Africa Time',
+                language: 'English',
+                currency: 'ZMW - Zambian Kwacha (ZK)',
+                currencySymbol: 'K',
+                currencyCode: 'ZMW',
+                profilePicture: undefined
+            };
+
+            updateProfile(defaultProfile);
+            
+            // Also update the database
+            const profileData = {
+                userId: user.id,
+                name: 'John Doe',
+                email: 'john.doe@example.com',
+                avatar: null,
+                phone: '+260 ',
+                timezone: 'Central Africa Time',
+                language: 'English',
+                currency: 'ZMW - Zambian Kwacha (ZK)',
+                currencySymbol: 'K',
+                currencyCode: 'ZMW'
+            };
+
+            try {
+                await fetch('/api/user/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(profileData),
+                });
+                
+                updateBudgetPreferences({
+                    currency: 'ZMW',
+                    currencySymbol: 'K',
+                    warningThreshold: 80,
+                });
+                
+                toast.success('Profile reset to defaults', { id: 'profile-reset' });
+            } catch (error) {
+                console.error('Error resetting profile:', error);
+                toast.error('Failed to reset profile', { id: 'profile-reset-error' });
+            }
         }
     };
 
@@ -246,7 +389,7 @@ export default function ProfileSettings() {
                         </label>
                         {profile.profilePicture && (
                             <button
-                                onClick={() => updateProfile({ profilePicture: undefined })}
+                                onClick={handleRemoveProfilePicture}
                                 className="ml-2 text-red-600 hover:text-red-700 text-sm font-medium"
                             >
                                 Remove
@@ -273,37 +416,25 @@ export default function ProfileSettings() {
                 <h3 className="font-semibold text-gray-900 mb-4">Preferences</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <SelectItem label="Timezone" value={profile.timezone} isEditing={isEditing} name="timezone" onChange={handleInputChange} options={timezones} />
-                    <SelectItem label="Language" value={profile.language} isEditing={isEditing} name="language" onChange={handleInputChange} options={languages} />
-                    <SelectItem label="Currency" value={profile.currency} isEditing={isEditing} name="currency" onChange={handleInputChange} options={currencies} />
+                    
+                    {/* Fixed Language Display */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">Language</label>
+                        <p className="text-gray-900 font-medium">English</p>
+                    </div>
+                    
+                    {/* Fixed Currency Display */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">Currency</label>
+                        <p className="text-gray-900 font-medium">ZMW - Zambian Kwacha (ZK)</p>
+                    </div>
                 </div>
             </div>
 
             {isEditing && (
                 <div className="flex justify-between items-center">
                     <button
-                        onClick={() => {
-                            if (confirm('Are you sure you want to reset your profile to default values?')) {
-                                updateProfile({
-                                    firstName: 'John',
-                                    lastName: 'Doe',
-                                    email: 'john.doe@example.com',
-                                    // UPDATED DEFAULT VALUES
-                                    phone: '+260 ',
-                                    timezone: 'Central Africa Time',
-                                    language: 'English',
-                                    currency: 'ZMW - Zambian Kwacha (ZK)',
-                                    profilePicture: undefined
-                                });
-                                // Reset Budget Prefs to match the new default currency
-                                updateBudgetPreferences({
-                                    currency: 'ZMW',
-                                    currencySymbol: 'K',
-                                    warningThreshold: 80,
-                                });
-                                
-                                toast.success('Profile reset to defaults');
-                            }
-                        }}
+                        onClick={handleResetToDefaults}
                         className="text-red-600 hover:text-red-700 font-medium"
                     >
                         Reset to Defaults

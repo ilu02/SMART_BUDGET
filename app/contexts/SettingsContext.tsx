@@ -79,6 +79,7 @@ interface SettingsContextType {
     getCurrencySymbol: () => string;
     clearUserSettings: () => void;
     currencySymbol: string;
+    loading: boolean;
 }
 
 const defaultAppearance: AppearanceSettings = {
@@ -114,7 +115,7 @@ const defaultProfile: ProfileSettings = {
     phone: '+260 ',
     timezone: 'Central Africa Time',
     language: 'English',
-    currency: 'ZMW - Zambian Kwacha (K)',
+    currency: 'ZMW - Zambian Kwacha (ZK)',
     profilePicture: undefined,
     currencySymbol: 'K',
     currencyCode: 'ZMW'
@@ -128,8 +129,8 @@ const defaultBudgetPreferences: BudgetPreferences = {
     roundUpTransactions: false,
     categorizeTransactions: true,
     defaultCategories: ['Food', 'Transportation', 'Entertainment', 'Utilities', 'Healthcare', 'Shopping'],
-    currency: 'ZMW', // Matches ZMW default
-    currencySymbol: 'K', // Matches ZMW default
+    currency: 'ZMW',
+    currencySymbol: 'K',
     currencyPosition: 'before',
     decimalPlaces: 2,
     thousandsSeparator: ',',
@@ -144,10 +145,124 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const [notifications, setNotifications] = useState<NotificationSettings>(defaultNotifications);
     const [budgetPreferences, setBudgetPreferences] = useState<BudgetPreferences>(defaultBudgetPreferences);
     const [profile, setProfile] = useState<ProfileSettings>(defaultProfile);
+    const [loading, setLoading] = useState(true);
 
-    // --- State Update Functions (Persist to localStorage/cookies) ---
-    // These functions apply the changes AND save them.
+    // Function to load user profile from database
+    const loadUserProfileFromDatabase = async (userId: string) => {
+        try {
+            const response = await fetch(`/api/user/profile?userId=${userId}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.user) {
+                    return data.user;
+                }
+            }
+            return null;
+        } catch (error) {
+            console.error('Error loading user profile from database:', error);
+            return null;
+        }
+    };
 
+    // Function to parse name into firstName and lastName
+    const parseUserName = (name: string) => {
+        if (!name) return { firstName: 'John', lastName: 'Doe' };
+        
+        const parts = name.trim().split(' ');
+        if (parts.length === 1) {
+            return { firstName: parts[0], lastName: '' };
+        }
+        return {
+            firstName: parts[0],
+            lastName: parts.slice(1).join(' ')
+        };
+    };
+
+    // --- Load Settings on Mount ---
+    useEffect(() => {
+        const loadSettings = async () => {
+            try {
+                setLoading(true);
+
+                // Load appearance settings from cookies
+                const userAppearanceCookieName = getUserCookieName('appearanceSettings', user?.id);
+                const savedAppearance = getJSONCookie<AppearanceSettings>(userAppearanceCookieName);
+
+                if (savedAppearance) {
+                    setAppearance({
+                        ...defaultAppearance,
+                        ...savedAppearance
+                    });
+                }
+
+                // Load notifications and budget preferences from localStorage
+                const savedNotifications = localStorage.getItem('notificationSettings');
+                const savedBudgetPreferences = localStorage.getItem('budgetPreferences');
+                const savedProfile = localStorage.getItem('profileSettings');
+
+                if (savedNotifications) {
+                    setNotifications(prev => ({ ...prev, ...JSON.parse(savedNotifications) }));
+                }
+                if (savedBudgetPreferences) {
+                    const parsed = JSON.parse(savedBudgetPreferences);
+                    setBudgetPreferences(prev => ({
+                        ...prev,
+                        ...parsed
+                    }));
+                }
+
+                // CRITICAL: Load profile data - prioritize database over localStorage
+                if (user?.id) {
+                    // Try to load from database first
+                    const dbUser = await loadUserProfileFromDatabase(user.id);
+                    
+                    if (dbUser) {
+                        // User found in database - use database data
+                        const nameParts = parseUserName(dbUser.name);
+                        const dbProfile = {
+                            firstName: nameParts.firstName,
+                            lastName: nameParts.lastName,
+                            email: dbUser.email || defaultProfile.email,
+                            phone: dbUser.phone || defaultProfile.phone,
+                            timezone: dbUser.timezone || defaultProfile.timezone,
+                            language: dbUser.language || defaultProfile.language,
+                            currency: dbUser.currency || defaultProfile.currency,
+                            currencySymbol: dbUser.currencySymbol || defaultProfile.currencySymbol,
+                            currencyCode: dbUser.currencyCode || defaultProfile.currencyCode,
+                            profilePicture: dbUser.avatar || defaultProfile.profilePicture
+                        };
+                        
+                        setProfile(dbProfile);
+                        // Also save to localStorage for offline access
+                        localStorage.setItem('profileSettings', JSON.stringify(dbProfile));
+                    } else if (savedProfile) {
+                        // Fallback to localStorage if database fails
+                        const parsed = JSON.parse(savedProfile);
+                        setProfile(prev => ({
+                            ...prev,
+                            ...parsed
+                        }));
+                    }
+                } else if (savedProfile) {
+                    // No user but have saved profile in localStorage
+                    const parsed = JSON.parse(savedProfile);
+                    setProfile(prev => ({
+                        ...prev,
+                        ...parsed
+                    }));
+                }
+
+            } catch (error) {
+                console.error('Error loading settings:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadSettings();
+    }, [user?.id]);
+
+    // --- State Update Functions ---
     const updateAppearance = (settings: Partial<AppearanceSettings>) => {
         setAppearance(prev => ({ ...prev, ...settings }));
     };
@@ -163,94 +278,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const updateProfile = (settings: Partial<ProfileSettings>) => {
         setProfile(prev => ({ ...prev, ...settings }));
     };
-    
-    // --- Load Settings on Mount ---
-    // This runs first to load data from persistence
 
-    useEffect(() => {
-        const loadSettings = () => {
-            try {
-                // Load appearance settings from cookies (user-specific)
-                const userAppearanceCookieName = getUserCookieName('appearanceSettings', user?.id);
-                const savedAppearance = getJSONCookie<AppearanceSettings>(userAppearanceCookieName);
-
-                if (savedAppearance) {
-                    setAppearance({
-                        ...defaultAppearance,
-                        ...savedAppearance
-                    });
-                } else {
-                    const legacyAppearance = localStorage.getItem('appearanceSettings');
-                    if (legacyAppearance) {
-                        try {
-                            const parsed = JSON.parse(legacyAppearance);
-                            setAppearance({
-                                ...defaultAppearance,
-                                ...parsed
-                            });
-                            if (user?.id) {
-                                setJSONCookie(userAppearanceCookieName, parsed, APPEARANCE_COOKIE_OPTIONS);
-                            }
-                            localStorage.removeItem('appearanceSettings');
-                        } catch (e) {
-                            console.error('Error migrating legacy appearance settings:', e);
-                        }
-                    }
-                }
-
-                const savedNotifications = localStorage.getItem('notificationSettings');
-                const savedBudgetPreferences = localStorage.getItem('budgetPreferences');
-                const savedProfile = localStorage.getItem('profileSettings');
-
-                if (savedNotifications) {
-                    setNotifications(prev => ({ ...prev, ...JSON.parse(savedNotifications) }));
-                }
-                if (savedBudgetPreferences) {
-                    const parsed = JSON.parse(savedBudgetPreferences);
-                    setBudgetPreferences(prev => ({
-                        ...prev,
-                        ...parsed
-                    }));
-                }
-                if (savedProfile) {
-                    const parsed = JSON.parse(savedProfile);
-                    // CRITICAL FIX: Ensure saved profile overrides the default values
-                    setProfile(prev => ({
-                        ...prev,
-                        ...parsed
-                    }));
-                }
-            } catch (error) {
-                console.error('Error loading settings:', error);
-            }
-        };
-
-        loadSettings();
-    }, [user?.id]); // Dependency on user?.id is fine for loading
-
-    // --- User Profile Update (AuthContext) ---
-    // This runs when the user object changes (e.g., after login/refresh if user data is fetched)
-    // We only want to update name/email IF they were never customized or if the local storage hadn't loaded yet.
-    useEffect(() => {
-        if (user) {
-            setProfile(prevProfile => {
-                // Do not overwrite local customizations with potentially default auth values.
-                // Only update if the current context profile is still the default John Doe profile.
-                if (prevProfile.email === defaultProfile.email && prevProfile.firstName === defaultProfile.firstName) {
-                    return {
-                        ...prevProfile,
-                        firstName: user.name?.split(' ')[0] || prevProfile.firstName,
-                        lastName: user.name?.split(' ').slice(1).join(' ') || prevProfile.lastName,
-                        email: user.email || prevProfile.email,
-                    };
-                }
-                return prevProfile;
-            });
-        }
-    }, [user]);
-
-    // --- Persistence Effects (Save state whenever it changes) ---
-
+    // --- Persistence Effects ---
     useEffect(() => {
         if (user?.id) {
             try {
@@ -264,7 +293,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         try {
-            // Note: Appearance is saved via cookies/user effect above
             localStorage.setItem('notificationSettings', JSON.stringify(notifications));
             localStorage.setItem('budgetPreferences', JSON.stringify(budgetPreferences));
             localStorage.setItem('profileSettings', JSON.stringify(profile));
@@ -272,9 +300,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             console.error('Error saving settings to localStorage:', error);
         }
     }, [notifications, budgetPreferences, profile]);
-    
-    // --- Utility Functions ---
 
+    // --- Utility Functions ---
     const formatCurrency = (amount: number): string => {
         const { currencySymbol, currencyPosition, decimalPlaces, thousandsSeparator, decimalSeparator } = budgetPreferences;
 
@@ -310,8 +337,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('notificationSettings');
         localStorage.removeItem('budgetPreferences');
         localStorage.removeItem('profileSettings');
-        
-        localStorage.removeItem('appearanceSettings');
     };
 
     const clearUserSettings = () => {
@@ -344,7 +369,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 formatCurrency,
                 clearUserSettings,
                 currencySymbol: budgetPreferences.currencySymbol,
-                getCurrencySymbol
+                getCurrencySymbol,
+                loading
             }}
         >
             {children}

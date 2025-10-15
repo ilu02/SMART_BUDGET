@@ -16,6 +16,12 @@ model User {
   password  String
   name      String
   avatar    String?
+  phone                 String?
+  timezone              String?
+  language              String?
+  currency              String?
+  currencySymbol        String?
+  currencyCode          String?
   isDemo    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

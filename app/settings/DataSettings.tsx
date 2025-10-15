@@ -2,12 +2,17 @@
 
 import { useState } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
+import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 export default function DataSettings() {
   const { notifications, updateNotifications } = useSettings();
+  const { user, logout } = useAuth();
+  const router = useRouter();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const dataOptions = [
     {
@@ -37,12 +42,50 @@ export default function DataSettings() {
     toast.success(`Data exported in ${format.toUpperCase()} format`);
   };
 
-  const handleDeleteAccount = () => {
-    if (deleteConfirmation === 'DELETE MY ACCOUNT') {
-      console.log('Account deletion confirmed');
-      setShowDeleteModal(false);
-      setDeleteConfirmation('');
-      toast.success('Account deletion process initiated');
+  const handleDeleteAccount = async () => {
+    if (!user?.id) {
+      toast.error('User not found');
+      return;
+    }
+
+    if (!deletePassword) {
+      toast.error('Please enter your password');
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch('/api/user/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          password: deletePassword
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Account deleted successfully');
+        setShowDeleteModal(false);
+        setDeletePassword('');
+        
+        // Log out and redirect to login
+        setTimeout(() => {
+          logout();
+          router.push('/auth/login');
+        }, 1000);
+      } else {
+        toast.error(data.error || 'Failed to delete account');
+      }
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast.error('Failed to delete account. Please try again.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -177,36 +220,44 @@ export default function DataSettings() {
             <p className="text-gray-600 mb-4">
               This action cannot be undone. All your data, including transactions, budgets, and settings will be permanently deleted.
             </p>
-            <p className="text-sm text-gray-500 mb-4">
-              Type <strong>DELETE MY ACCOUNT</strong> to confirm:
+            <p className="text-sm text-gray-700 font-medium mb-2">
+              Enter your password to confirm:
             </p>
             <input
-              type="text"
-              value={deleteConfirmation}
-              onChange={(e) => setDeleteConfirmation(e.target.value)}
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 mb-4"
-              placeholder="DELETE MY ACCOUNT"
+              placeholder="Enter your password"
+              disabled={isDeleting}
             />
             <div className="flex space-x-3">
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
-                  setDeleteConfirmation('');
+                  setDeletePassword('');
                 }}
-                className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium cursor-pointer hover:bg-gray-50 whitespace-nowrap"
+                disabled={isDeleting}
+                className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium cursor-pointer hover:bg-gray-50 whitespace-nowrap disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteAccount}
-                disabled={deleteConfirmation !== 'DELETE MY ACCOUNT'}
-                className={`flex-1 px-4 py-2 rounded-lg font-medium cursor-pointer whitespace-nowrap ${
-                  deleteConfirmation === 'DELETE MY ACCOUNT'
+                disabled={!deletePassword || isDeleting}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium cursor-pointer whitespace-nowrap flex items-center justify-center ${
+                  deletePassword && !isDeleting
                     ? 'bg-red-600 hover:bg-red-700 text-white'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                Delete Account
+                {isDeleting && (
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
+                {isDeleting ? 'Deleting...' : 'Delete Account'}
               </button>
             </div>
           </div>

@@ -49,10 +49,10 @@ export default function RootLayout({
       <body className={`${inter.variable} ${pacifico.variable} antialiased`}>
         <AuthProvider>
           <SettingsProvider>
-            <BudgetProvider>
-              <TransactionProvider>
-                <BudgetTransactionSync>
-                  <NotificationProvider>
+            <NotificationProvider>
+              <BudgetProvider>
+                <TransactionProvider>
+                  <BudgetTransactionSync>
                     <ThemeWrapper>
                       <Toaster
                         position="top-right"
@@ -65,10 +65,10 @@ export default function RootLayout({
                       />
                       {children}
                     </ThemeWrapper>
-                  </NotificationProvider>
-                </BudgetTransactionSync>
-              </TransactionProvider>
-            </BudgetProvider>
+                  </BudgetTransactionSync>
+                </TransactionProvider>
+              </BudgetProvider>
+            </NotificationProvider>
           </SettingsProvider>
         </AuthProvider>
       </body>

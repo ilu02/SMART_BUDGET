@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
+import { useNotifications } from './NotificationContext';
 import toast from 'react-hot-toast';
 
 export interface Transaction {
@@ -61,6 +62,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [budgetRefreshCallback, setBudgetRefreshCallbackState] = useState<(() => Promise<void>) | null>(null);
   const { user, isAuthenticated } = useAuth();
+  const { addNotification } = useNotifications();
 
   const setBudgetRefreshCallback = useCallback((callback: () => Promise<void>) => {
     setBudgetRefreshCallbackState(() => callback);
@@ -174,6 +176,13 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
           color: categoryMapping[data.transaction.category]?.color || 'text-gray-600 bg-gray-50'
         };
         setTransactions(prev => [newTransaction, ...prev]);
+
+        // Add notifications from API response
+        if (data.notifications && data.notifications.length > 0) {
+          data.notifications.forEach((notification: any) => {
+            addNotification(notification);
+          });
+        }
 
         if (budgetRefreshCallback && transactionData.type === 'expense') {
           await budgetRefreshCallback();

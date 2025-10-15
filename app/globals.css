@@ -72,6 +72,118 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 210 40% 98%;
   }
+
+  /* Dark mode specific styles */
+  .dark body {
+    @apply bg-gray-900 text-gray-100;
+  }
+
+  .dark .bg-white {
+    @apply bg-gray-800;
+  }
+
+  .dark .bg-gray-50 {
+    @apply bg-gray-800;
+  }
+
+  .dark .bg-gray-100 {
+    @apply bg-gray-700;
+  }
+
+  .dark .text-gray-900 {
+    @apply text-gray-100;
+  }
+
+  .dark .text-gray-800 {
+    @apply text-gray-200;
+  }
+
+  .dark .text-gray-700 {
+    @apply text-gray-300;
+  }
+
+  .dark .text-gray-600 {
+    @apply text-gray-400;
+  }
+
+  .dark .text-gray-500 {
+    color: rgb(156 163 175); /* gray-400 */
+  }
+
+  .dark .border-gray-200 {
+    @apply border-gray-700;
+  }
+
+  .dark .border-gray-300 {
+    @apply border-gray-600;
+  }
+
+  .dark .hover\:bg-gray-50:hover {
+    @apply bg-gray-700;
+  }
+
+  .dark .hover\:bg-gray-100:hover {
+    @apply bg-gray-600;
+  }
+
+  .dark input,
+  .dark textarea,
+  .dark select {
+    @apply bg-gray-700 border-gray-600 text-gray-100;
+  }
+
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: rgb(107 114 128); /* gray-500 for dark mode */
+  }
+
+  .dark .bg-blue-50 {
+    @apply bg-blue-900/20;
+  }
+
+  .dark .bg-red-50 {
+    @apply bg-red-900/20;
+  }
+
+  .dark .bg-green-50 {
+    @apply bg-green-900/20;
+  }
+
+  .dark .bg-yellow-50 {
+    @apply bg-yellow-900/20;
+  }
+
+  .dark .border-blue-200 {
+    @apply border-blue-800;
+  }
+
+  .dark .border-red-200 {
+    @apply border-red-800;
+  }
+
+  .dark .text-blue-900 {
+    @apply text-blue-200;
+  }
+
+  .dark .text-blue-700 {
+    @apply text-blue-300;
+  }
+
+  .dark .text-red-900 {
+    @apply text-red-200;
+  }
+
+  .dark .text-red-600 {
+    @apply text-red-400;
+  }
+
+  .dark .shadow-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  }
+
+  .dark .shadow-md {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  }
 }
 
 @layer base {

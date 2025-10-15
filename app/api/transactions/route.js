@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getUserTransactions, addTransaction, updateTransaction, deleteTransaction, updateBudgetSpent, getUserSettings } from '../../../lib/database.js';
-import { createTransactionAlert } from '../../contexts/NotificationContext'; 
+import { createTransactionAlert, createBudgetAlert } from '../../contexts/NotificationContext'; 
 
 
 export async function GET(request) {
@@ -54,9 +54,11 @@ export async function POST(request) {
         const userSettings = await getUserSettings(userId);
         const currencySymbol = userSettings?.currencySymbol || '$'; // Use a default if setting is missing
         const largeThreshold = userSettings?.largeTransactionThreshold || 1000; // Use a default if setting is missing
+        const budgetThreshold = userSettings?.budgetThreshold || 0.80; // Default to 80% threshold (0.80)
 
-        // 2. Add transaction to DB and get the final object
-        const transaction = await addTransaction(userId, transactionData);
+        // 2. Add transaction to DB and get the final object (includes updatedBudget if applicable)
+        const transactionResult = await addTransaction(userId, transactionData);
+        const transaction = transactionResult;
 
         // 3. Check for and generate notifications
         const notificationsToSend = [];
@@ -71,12 +73,31 @@ export async function POST(request) {
             notificationsToSend.push(alert);
         }
 
-        // NOTE: Additional alerts (like budget exceeded) would be checked here.
+        // Budget Alert Check: If this transaction affected a budget, check if threshold exceeded
+        if (transaction.updatedBudget && transaction.type === 'expense') {
+            const { category, spent, budget } = transaction.updatedBudget;
+            const percentageSpent = spent / budget; // Calculate as decimal (0.0 to 1.0)
+            
+            // Generate alert if spent exceeds the threshold (default 80% = 0.80)
+            if (percentageSpent >= budgetThreshold) {
+                const budgetAlert = createBudgetAlert(
+                    category,
+                    spent,
+                    budget,
+                    currencySymbol,
+                    budgetThreshold * 100 // Convert to percentage for display
+                );
+                notificationsToSend.push(budgetAlert);
+            }
+        }
+
+        // Clean up the transaction object before returning (remove updatedBudget)
+        const { updatedBudget, ...cleanTransaction } = transaction;
 
         // 4. Return transaction and any generated notifications
         return NextResponse.json({
             success: true,
-            transaction,
+            transaction: cleanTransaction,
             notifications: notificationsToSend, // Send generated notifications
         });
 

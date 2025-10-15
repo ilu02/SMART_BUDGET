@@ -16,20 +16,6 @@ export default function DataSettings() {
       action: 'Export',
       icon: 'ri-download-2-line',
       color: 'bg-blue-600 hover:bg-blue-700'
-    },
-    {
-      title: 'Import Data',
-      description: 'Import transactions and budgets from other financial apps',
-      action: 'Import',
-      icon: 'ri-upload-2-line',
-      color: 'bg-green-600 hover:bg-green-700'
-    },
-    {
-      title: 'Backup Data',
-      description: 'Create a secure backup of all your financial information',
-      action: 'Backup',
-      icon: 'ri-shield-check-line',
-      color: 'bg-purple-600 hover:bg-purple-700'
     }
   ];
 
@@ -49,16 +35,6 @@ export default function DataSettings() {
   const handleExport = (format: string) => {
     console.log(`Exporting data in ${format} format`);
     toast.success(`Data exported in ${format.toUpperCase()} format`);
-  };
-
-  const handleImport = () => {
-    console.log('Opening import dialog');
-    toast.success('Import dialog opened');
-  };
-
-  const handleBackup = () => {
-    console.log('Creating backup');
-    toast.success('Backup created successfully');
   };
 
   const handleDeleteAccount = () => {
@@ -126,8 +102,6 @@ export default function DataSettings() {
                 <button
                   onClick={() => {
                     if (option.action === 'Export') handleExport('csv');
-                    else if (option.action === 'Import') handleImport();
-                    else if (option.action === 'Backup') handleBackup();
                   }}
                   className={`${option.color} text-white px-4 py-2 rounded-lg font-medium cursor-pointer whitespace-nowrap`}
                 >
@@ -169,23 +143,6 @@ export default function DataSettings() {
           </button>
         </div>
       </div>
-
-      {/* Privacy Settings */}
-      <div className="bg-gray-50 rounded-lg p-6">
-        <h3 className="font-semibold text-gray-900 mb-4">Privacy Settings</h3>
-        <div className="space-y-4">
-          {privacySettings.map((setting) => (
-            <PrivacyToggle
-              key={setting.id}
-              id={setting.id}
-              title={setting.title}
-              description={setting.description}
-              enabled={notifications[setting.id as keyof typeof notifications] || false}
-            />
-          ))}
-        </div>
-      </div>
-
       {/* Account Actions */}
       <div className="bg-red-50 rounded-lg p-6 border border-red-200">
         <h3 className="font-semibold text-red-900 mb-4">Danger Zone</h3>

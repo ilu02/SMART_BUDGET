@@ -81,33 +81,6 @@ export default function NotificationSettings() {
         </div>
       </div>
 
-      {/* Notification Test */}
-      <Card className="p-6 bg-blue-50 border-blue-200">
-        <div className="flex items-start space-x-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            <i className="ri-notification-3-line text-blue-600" aria-hidden="true"></i>
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-blue-900 mb-2">Test Notifications</h3>
-            <p className="text-blue-800 text-sm mb-4">
-              Make sure your notifications are working properly by sending a test notification.
-            </p>
-            <Button
-              size="sm"
-              onClick={() => {
-                if (notifications.pushNotifications) {
-                  toast.success('Test notification sent! 🎉');
-                } else {
-                  toast.error('Push notifications are disabled. Enable them first.');
-                }
-              }}
-            >
-              Send Test Notification
-            </Button>
-          </div>
-        </div>
-      </Card>
-
       {/* Notification Groups */}
       {notificationGroups.map((group, groupIndex) => (
         <Card key={groupIndex} className="p-6">

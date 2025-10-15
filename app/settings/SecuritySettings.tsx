@@ -133,44 +133,6 @@ export default function SecuritySettings() {
               </div>
             </div>
           )}
-
-          <div className="flex items-center justify-between py-4 border-t border-gray-200">
-            <div>
-              <h4 className="font-medium text-gray-900">Two-Factor Authentication</h4>
-              <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
-            </div>
-            <button
-              onClick={() => setSecurity(prev => ({ ...prev, twoFactorEnabled: !prev.twoFactorEnabled }))}
-              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                security.twoFactorEnabled ? 'bg-blue-600' : 'bg-gray-200'
-              }`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                  security.twoFactorEnabled ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between py-4 border-t border-gray-200">
-            <div>
-              <h4 className="font-medium text-gray-900">Biometric Authentication</h4>
-              <p className="text-sm text-gray-500">Use fingerprint or face recognition to log in</p>
-            </div>
-            <button
-              onClick={() => setSecurity(prev => ({ ...prev, biometricEnabled: !prev.biometricEnabled }))}
-              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                security.biometricEnabled ? 'bg-blue-600' : 'bg-gray-200'
-              }`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                  security.biometricEnabled ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
         </div>
       </div>
 
@@ -194,67 +156,6 @@ export default function SecuritySettings() {
               <option value={0}>Never</option>
             </select>
           </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium text-gray-900">Login Notifications</h4>
-              <p className="text-sm text-gray-500">Get notified when someone logs into your account</p>
-            </div>
-            <button
-              onClick={() => setSecurity(prev => ({ ...prev, loginNotifications: !prev.loginNotifications }))}
-              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                security.loginNotifications ? 'bg-blue-600' : 'bg-gray-200'
-              }`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                  security.loginNotifications ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Active Sessions */}
-      <div className="bg-gray-50 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-900">Active Sessions</h3>
-          <button className="text-sm text-blue-600 hover:text-blue-700 cursor-pointer">
-            Sign out all other sessions
-          </button>
-        </div>
-        <div className="space-y-4">
-          {sessions.map((session) => (
-            <div key={session.id} className="bg-white rounded-lg p-4 border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <i className={`${session.browser === 'Chrome' ? 'ri-chrome-line' : 'ri-safari-line'} text-lg text-gray-600`}></i>
-                  </div>
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <h4 className="font-medium text-gray-900">{session.device}</h4>
-                      {session.current && (
-                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                          Current
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-500">{session.location} • {session.lastActive}</p>
-                  </div>
-                </div>
-                {!session.current && (
-                  <button
-                    onClick={() => handleRevokeSession(session.id)}
-                    className="text-red-600 hover:text-red-700 text-sm cursor-pointer"
-                  >
-                    Revoke
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
         </div>
       </div>
 

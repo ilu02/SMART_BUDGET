@@ -632,30 +632,8 @@ export default function AppearanceSettings() {
             <i className="ri-refresh-line"></i>
             <span>Reset to Defaults</span>
           </Button>
-          
-          <Button
-            variant="outline"
-            onClick={() => {
-              const settings = {
-                theme: appearance.theme,
-                colorScheme: appearance.colorScheme,
-                fontSize: appearance.fontSize,
-                compactMode: appearance.compactMode,
-                animations: appearance.animations,
-                layout: appearance.layout,
-                cardStyle: appearance.cardStyle,
-                sidebarPosition: appearance.sidebarPosition
-              };
-              navigator.clipboard.writeText(JSON.stringify(settings, null, 2));
-              toast.success('Settings copied to clipboard');
-            }}
-            className="flex items-center space-x-2"
-          >
-            <i className="ri-file-copy-line"></i>
-            <span>Export Settings</span>
-          </Button>
         </div>
-        
+
         <div className="mt-4 p-3 bg-gray-50 rounded-lg">
           <p className="text-sm text-gray-600">
             <i className="ri-information-line mr-1"></i>

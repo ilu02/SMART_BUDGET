@@ -10,7 +10,7 @@ const timezones = [
     'Mountain Time',
     'Pacific Time',
     'GMT',
-    'Central Africa Time', // Ensured this option is available
+    'Central Africa Time',
 ];
 
 const languages = ['English', 'Spanish', 'French', 'German', 'Mandarin'];
@@ -31,12 +31,6 @@ export default function ProfileSettings() {
     const [saving, setSaving] = useState(false);
     const { profile, updateProfile, updateBudgetPreferences } = useSettings();
     const { user, updateProfile: updateUserProfile } = useAuth();
-
-    // Generate unique avatar URL for users without profile pictures
-    const getUniqueAvatar = (userId: string, userEmail: string) => {
-        // Use DiceBear avatars with user ID as seed for uniqueness
-        return `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}&backgroundColor=b6e3f4,c0aede,d1d4f9&scale=80`;
-    };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -100,7 +94,7 @@ export default function ProfileSettings() {
 
         setSaving(true);
         try {
-            // Update user profile in database
+            // Update user profile in database with ALL profile data
             const response = await fetch('/api/user/profile', {
                 method: 'PUT',
                 headers: {
@@ -110,7 +104,13 @@ export default function ProfileSettings() {
                     userId: user.id,
                     name: `${profile.firstName} ${profile.lastName}`.trim(),
                     email: profile.email,
-                    avatar: profile.profilePicture
+                    avatar: profile.profilePicture,
+                    phone: profile.phone,
+                    timezone: profile.timezone,
+                    language: profile.language,
+                    currency: profile.currency,
+                    currencySymbol: profile.currencySymbol,
+                    currencyCode: profile.currencyCode
                 }),
             });
 
@@ -120,21 +120,49 @@ export default function ProfileSettings() {
                 // Update the user in AuthContext
                 updateUserProfile(data.user);
                 
-                // Save the updated profile to localStorage via the updateProfile in SettingsContext
-                // (Note: This is now handled in SettingsContext.tsx via the updateProfile wrapper)
+                // Update local profile state with the response data
+                const nameParts = parseUserName(data.user.name);
+                const updatedProfile = {
+                    firstName: nameParts.firstName,
+                    lastName: nameParts.lastName,
+                    email: data.user.email,
+                    phone: data.user.phone || '',
+                    timezone: data.user.timezone || 'Central Africa Time',
+                    language: data.user.language || 'English',
+                    currency: data.user.currency || 'ZMW - Zambian Kwacha (ZK)',
+                    currencySymbol: data.user.currencySymbol || 'K',
+                    currencyCode: data.user.currencyCode || 'ZMW',
+                    profilePicture: data.user.avatar
+                };
+                
+                updateProfile(updatedProfile);
 
                 setIsEditing(false);
                 setOriginalProfile(null);
-                toast.success('Profile updated successfully!');
+                toast.success('Profile updated successfully!', { id: 'profile-update-success' });
             } else {
-                toast.error(data.error || 'Failed to update profile');
+                toast.error(data.error || 'Failed to update profile', { id: 'profile-update-error' });
             }
         } catch (error) {
             console.error('Error updating profile:', error);
-            toast.error('Failed to update profile. Please try again.');
+            toast.error('Failed to update profile. Please try again.', { id: 'profile-update-error' });
         } finally {
             setSaving(false);
         }
+    };
+
+    // Helper function to parse name into first and last name
+    const parseUserName = (name: string) => {
+        if (!name) return { firstName: 'John', lastName: 'Doe' };
+        
+        const parts = name.trim().split(' ');
+        if (parts.length === 1) {
+            return { firstName: parts[0], lastName: '' };
+        }
+        return {
+            firstName: parts[0],
+            lastName: parts.slice(1).join(' ')
+        };
     };
 
     const handleEdit = () => {
@@ -159,19 +187,19 @@ export default function ProfileSettings() {
         // Validate file type
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
         if (!allowedTypes.includes(file.type)) {
-            toast.error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.');
+            toast.error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.', { id: 'profile-picture-error' });
             return;
         }
 
         // Check file size (1MB limit)
         if (file.size > 1024 * 1024) {
-            toast.error('File size too large. Maximum size is 1MB.');
+            toast.error('File size too large. Maximum size is 1MB.', { id: 'profile-picture-error' });
             return;
         }
 
         try {
             // Show loading state
-            const loadingToast = toast.loading('Uploading profile picture...');
+            const loadingToast = toast.loading('Uploading profile picture...', { id: 'profile-picture-upload' });
 
             // Create form data
             const formData = new FormData();
@@ -190,13 +218,72 @@ export default function ProfileSettings() {
             if (response.ok && data.success) {
                 // Update profile with the new image URL
                 updateProfile({ profilePicture: data.url });
+                
+                // Also update the avatar in the user profile database
+                const profileData = {
+                    userId: user.id,
+                    name: `${profile.firstName} ${profile.lastName}`.trim(),
+                    email: profile.email,
+                    avatar: data.url,
+                    phone: profile.phone,
+                    timezone: profile.timezone,
+                    language: profile.language,
+                    currency: profile.currency,
+                    currencySymbol: profile.currencySymbol,
+                    currencyCode: profile.currencyCode
+                };
+
+                // Update user profile in database with new avatar
+                await fetch('/api/user/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(profileData),
+                });
+
                 toast.success('Profile picture updated!', { id: loadingToast });
             } else {
                 toast.error(data.error || 'Failed to upload profile picture', { id: loadingToast });
             }
         } catch (error) {
             console.error('Error uploading profile picture:', error);
-            toast.error('Failed to upload profile picture. Please try again.');
+            toast.error('Failed to upload profile picture. Please try again.', { id: 'profile-picture-error' });
+        }
+    };
+
+    const handleRemoveProfilePicture = async () => {
+        if (!user?.id) return;
+
+        // Update local state
+        updateProfile({ profilePicture: undefined });
+        
+        // Also update the database
+        const profileData = {
+            userId: user.id,
+            name: `${profile.firstName} ${profile.lastName}`.trim(),
+            email: profile.email,
+            avatar: null,
+            phone: profile.phone,
+            timezone: profile.timezone,
+            language: profile.language,
+            currency: profile.currency,
+            currencySymbol: profile.currencySymbol,
+            currencyCode: profile.currencyCode
+        };
+        
+        try {
+            await fetch('/api/user/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(profileData),
+            });
+            toast.success('Profile picture removed', { id: 'profile-picture-remove' });
+        } catch (error) {
+            console.error('Error removing profile picture:', error);
+            toast.error('Failed to remove profile picture', { id: 'profile-picture-error' });
         }
     };
 
@@ -246,7 +333,7 @@ export default function ProfileSettings() {
                         </label>
                         {profile.profilePicture && (
                             <button
-                                onClick={() => updateProfile({ profilePicture: undefined })}
+                                onClick={handleRemoveProfilePicture}
                                 className="ml-2 text-red-600 hover:text-red-700 text-sm font-medium"
                             >
                                 Remove
@@ -287,7 +374,6 @@ export default function ProfileSettings() {
                                     firstName: 'John',
                                     lastName: 'Doe',
                                     email: 'john.doe@example.com',
-                                    // UPDATED DEFAULT VALUES
                                     phone: '+260 ',
                                     timezone: 'Central Africa Time',
                                     language: 'English',
@@ -301,7 +387,7 @@ export default function ProfileSettings() {
                                     warningThreshold: 80,
                                 });
                                 
-                                toast.success('Profile reset to defaults');
+                                toast.success('Profile reset to defaults', { id: 'profile-reset' });
                             }
                         }}
                         className="text-red-600 hover:text-red-700 font-medium"

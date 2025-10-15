@@ -21,8 +21,7 @@ export default function SettingsPage() {
     { id: 'budget', name: 'Budget Preferences', icon: 'ri-wallet-3-line' },
     { id: 'security', name: 'Security', icon: 'ri-shield-check-line' },
     { id: 'appearance', name: 'Appearance', icon: 'ri-palette-line' },
-    { id: 'data', name: 'Data & Privacy', icon: 'ri-database-2-line' },
-    { id: 'help', name: 'Help & Tutorial', icon: 'ri-question-line' }
+    { id: 'data', name: 'Data & Privacy', icon: 'ri-database-2-line' }
   ];
 
   const renderActiveContent = () => {

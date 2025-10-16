@@ -28,8 +28,9 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  transactions Transaction[]
-  budgets      Budget[]
+  transactions  Transaction[]
+  budgets       Budget[]
+  notifications Notification[]
 
   @@map("users")
 }
@@ -71,4 +72,28 @@ model Budget {
 
   @@unique([userId, category])
   @@map("budgets")
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  type        String   // 'budget' | 'transaction' | 'bill' | 'goal' | 'system' | 'security'
+  title       String
+  message     String
+  read        Boolean  @default(false)
+  priority    String   // 'low' | 'medium' | 'high' | 'urgent'
+  actionUrl   String?
+  actionText  String?
+  category    String?
+  amount      Float?
+  threshold   Float?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, read])
+  @@map("notifications")
 }

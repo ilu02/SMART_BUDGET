@@ -109,9 +109,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     try {
-      // Clear localStorage
+      // Clear user-specific data from localStorage
+      const userId = user?.id;
       localStorage.removeItem('user');
       localStorage.removeItem('authToken');
+      
+      // Remove user-specific keys
+      if (userId) {
+        localStorage.removeItem(`notifications_${userId}`);
+        localStorage.removeItem(`transactions_${userId}`);
+        localStorage.removeItem(`settings_${userId}`);
+      }
+      
+      // Also remove old global keys for backward compatibility
       localStorage.removeItem('notifications');
       localStorage.removeItem('transactions');
       localStorage.removeItem('settings');

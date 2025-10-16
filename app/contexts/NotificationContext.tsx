@@ -4,6 +4,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { useSettings } from './SettingsContext';
+import { useAuth } from './AuthContext';
 import { createBudgetAlert, createTransactionAlert, createBillReminder, createGoalAchievement, createLowBalanceAlert, createIrregularSpendingAlert, createReportAvailableNotification } from '../../lib/notificationUtils'; 
 
 export interface Notification {
@@ -37,20 +38,29 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 // --- PROVIDER COMPONENT ---
 export function NotificationProvider({ children }: { children: ReactNode }) {
-    const { notifications: notificationSettings, formatCurrency } = useSettings(); 
+    const { notifications: notificationSettings, formatCurrency } = useSettings();
+    const { user } = useAuth();
+
+    // Get user-specific localStorage key
+    const getStorageKey = () => {
+        return user?.id ? `notifications_${user.id}` : null;
+    };
 
     // 1. Initialize state - try to load from localStorage immediately for hydration
     const [notifications, setNotifications] = useState<Notification[]>(() => {
         if (typeof window !== 'undefined') {
             try {
-                const saved = localStorage.getItem('notifications');
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    // Convert timestamp strings back to Date objects
-                    return parsed.map((n: any) => ({
-                        ...n,
-                        timestamp: new Date(n.timestamp)
-                    }));
+                const storageKey = user?.id ? `notifications_${user.id}` : null;
+                if (storageKey) {
+                    const saved = localStorage.getItem(storageKey);
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        // Convert timestamp strings back to Date objects
+                        return parsed.map((n: any) => ({
+                            ...n,
+                            timestamp: new Date(n.timestamp)
+                        }));
+                    }
                 }
             } catch (error) {
                 console.error('Failed to load notifications from localStorage on init:', error);
@@ -61,9 +71,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     // 2. Ensure notifications are loaded from localStorage on mount (fallback)
     useEffect(() => {
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && user?.id) {
             try {
-                const saved = localStorage.getItem('notifications');
+                const storageKey = `notifications_${user.id}`;
+                const saved = localStorage.getItem(storageKey);
                 if (saved && notifications.length === 0) {
                     const parsed = JSON.parse(saved);
                     const withDates = parsed.map((n: any) => ({
@@ -76,11 +87,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
                 console.error('Failed to load notifications from localStorage on mount:', error);
             }
         }
-    }, []);
+    }, [user?.id]);
 
     // 3. Save notifications to localStorage whenever they change - with debouncing
     useEffect(() => {
-        if (typeof window !== 'undefined' && notifications.length > 0) {
+        if (typeof window !== 'undefined' && user?.id && notifications.length > 0) {
+            const storageKey = `notifications_${user.id}`;
             // Use a small timeout to batch multiple updates
             const timeoutId = setTimeout(() => {
                 try {
@@ -88,7 +100,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
                         ...n,
                         timestamp: n.timestamp instanceof Date ? n.timestamp.toISOString() : n.timestamp,
                     }));
-                    localStorage.setItem('notifications', JSON.stringify(serializableNotifications));
+                    localStorage.setItem(storageKey, JSON.stringify(serializableNotifications));
                 } catch (error) {
                     console.error('Error saving notifications to localStorage:', error);
                 }
@@ -96,7 +108,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
             return () => clearTimeout(timeoutId);
         }
-    }, [notifications]);
+    }, [notifications, user?.id]);
 
     // 4. RESTORED & CORRECTED: addNotification logic
     const addNotification = useCallback((notificationData: Omit<Notification, 'id' | 'read'>) => {
@@ -163,9 +175,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         setNotifications(prev => {
             const unreadNotifications = prev.filter(notification => !notification.read);
             // If all notifications are cleared, explicitly remove from localStorage
-            if (unreadNotifications.length === 0 && typeof window !== 'undefined') {
+            if (unreadNotifications.length === 0 && typeof window !== 'undefined' && user?.id) {
                 try {
-                    localStorage.removeItem('notifications');
+                    const storageKey = `notifications_${user.id}`;
+                    localStorage.removeItem(storageKey);
                 } catch (error) {
                     console.error('Error clearing notifications from localStorage:', error);
                 }

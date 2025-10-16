@@ -305,24 +305,6 @@ export default function Header() {
                       <i className="ri-user-settings-line mr-2" aria-hidden="true"></i>
                       Edit Profile
                     </Link>
-                    <Link 
-                      href="/settings" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      <i className="ri-settings-3-line mr-2" aria-hidden="true"></i>
-                      Settings
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setIsUserMenuOpen(false);
-                        startTutorial();
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      <i className="ri-question-line mr-2" aria-hidden="true"></i>
-                      Help & Tutorial
-                    </button>
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100"

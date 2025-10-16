@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getUserTransactions, addTransaction, updateTransaction, deleteTransaction, updateBudgetSpent, getUserSettings } from '../../../lib/database.js';
-import { createTransactionAlert, createBudgetAlert } from '../../contexts/NotificationContext'; 
+import { createTransactionAlert, createBudgetAlert } from '../../../lib/notificationUtils.js'; 
 
 
 export async function GET(request) {

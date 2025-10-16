@@ -3,7 +3,8 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { useSettings } from './SettingsContext'; 
+import { useSettings } from './SettingsContext';
+import { createBudgetAlert, createTransactionAlert, createBillReminder, createGoalAchievement, createLowBalanceAlert, createIrregularSpendingAlert, createReportAvailableNotification } from '../../lib/notificationUtils'; 
 
 export interface Notification {
     id: string;
@@ -38,17 +39,33 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export function NotificationProvider({ children }: { children: ReactNode }) {
     const { notifications: notificationSettings, formatCurrency } = useSettings(); 
 
-    // 1. Initialize state to an empty array for both server and client (Hydration Fix)
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-
-    // 2. Load notifications from localStorage only on mount (client-side)
-    useEffect(() => {
+    // 1. Initialize state - try to load from localStorage immediately for hydration
+    const [notifications, setNotifications] = useState<Notification[]>(() => {
         if (typeof window !== 'undefined') {
             try {
                 const saved = localStorage.getItem('notifications');
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     // Convert timestamp strings back to Date objects
+                    return parsed.map((n: any) => ({
+                        ...n,
+                        timestamp: new Date(n.timestamp)
+                    }));
+                }
+            } catch (error) {
+                console.error('Failed to load notifications from localStorage on init:', error);
+            }
+        }
+        return [];
+    });
+
+    // 2. Ensure notifications are loaded from localStorage on mount (fallback)
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const saved = localStorage.getItem('notifications');
+                if (saved && notifications.length === 0) {
+                    const parsed = JSON.parse(saved);
                     const withDates = parsed.map((n: any) => ({
                         ...n,
                         timestamp: new Date(n.timestamp)
@@ -56,23 +73,28 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
                     setNotifications(withDates);
                 }
             } catch (error) {
-                console.error('Failed to load notifications from localStorage:', error);
+                console.error('Failed to load notifications from localStorage on mount:', error);
             }
         }
-    }, []); // Empty dependency array fixes hydration error
+    }, []);
 
-    // 3. Keep: Save notifications to localStorage whenever they change
+    // 3. Save notifications to localStorage whenever they change - with debouncing
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            try {
-                const serializableNotifications = notifications.map(n => ({
-                    ...n,
-                    timestamp: n.timestamp.toISOString(),
-                }));
-                localStorage.setItem('notifications', JSON.stringify(serializableNotifications));
-            } catch (error) {
-                console.error('Error saving notifications to localStorage:', error);
-            }
+        if (typeof window !== 'undefined' && notifications.length > 0) {
+            // Use a small timeout to batch multiple updates
+            const timeoutId = setTimeout(() => {
+                try {
+                    const serializableNotifications = notifications.map(n => ({
+                        ...n,
+                        timestamp: n.timestamp instanceof Date ? n.timestamp.toISOString() : n.timestamp,
+                    }));
+                    localStorage.setItem('notifications', JSON.stringify(serializableNotifications));
+                } catch (error) {
+                    console.error('Error saving notifications to localStorage:', error);
+                }
+            }, 100);
+
+            return () => clearTimeout(timeoutId);
         }
     }, [notifications]);
 
@@ -99,9 +121,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
             ...notificationData,
             // Ensure a unique ID is generated
             id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-            // The timestamp is now included in notificationData from the caller (e.g., createBudgetAlert)
-            // This line ensures it's a Date object if the caller passed a string, or defaults to now if somehow missing.
-            timestamp: new Date(notificationData.timestamp || Date.now()), 
+            // Ensure timestamp is a Date object
+            // If it's already a Date, keep it; if it's a string, parse it; if missing, use now
+            timestamp: notificationData.timestamp instanceof Date 
+                ? notificationData.timestamp 
+                : new Date(notificationData.timestamp || Date.now()),
             read: false
         };
 
@@ -136,7 +160,18 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     };
 
     const clearAllRead = () => {
-        setNotifications(prev => prev.filter(notification => !notification.read));
+        setNotifications(prev => {
+            const unreadNotifications = prev.filter(notification => !notification.read);
+            // If all notifications are cleared, explicitly remove from localStorage
+            if (unreadNotifications.length === 0 && typeof window !== 'undefined') {
+                try {
+                    localStorage.removeItem('notifications');
+                } catch (error) {
+                    console.error('Error clearing notifications from localStorage:', error);
+                }
+            }
+            return unreadNotifications;
+        });
     };
 
     const getNotificationsByType = (type: string) => {
@@ -171,93 +206,17 @@ export function useNotifications() {
     return context;
 }
 
-// --- Utility functions for creating common notification types (Used by your API routes) ---
+// --- Utility functions are now imported from notificationUtils.js ---
+// This allows them to be used in both server-side routes and client components
+// without the 'use client' constraint
 
-export const createBudgetAlert = (category: string, spent: number, budget: number, currency: string = '$', threshold?: number) => ({
-    type: 'budget' as const,
-    title: `Budget Alert: ${category}`,
-    message: `You've spent ${Math.round((spent / budget) * 100)}% of your ${category.toLowerCase()} budget (${currency}${spent} of ${currency}${budget})`,
-    timestamp: new Date(),
-    priority: spent / budget > 0.9 ? 'urgent' as const : spent / budget > 0.8 ? 'high' as const : 'medium' as const,
-    actionUrl: '/budgets',
-    actionText: 'View Budget',
-    category,
-    amount: spent,
-    threshold
-});
-
-export const createTransactionAlert = (amount: number, merchant: string, currency: string = '$') => ({
-    type: 'transaction' as const,
-    title: 'Large Transaction Detected',
-    message: `A transaction of ${currency}${amount} was recorded at ${merchant}`,
-    timestamp: new Date(),
-    priority: amount > 5000 ? 'high' as const : 'medium' as const,
-    actionUrl: '/transactions',
-    actionText: 'View Transaction',
-    amount
-});
-
-export const createBillReminder = (billName: string, amount: number, daysUntilDue: number, currency: string = '$') => ({
-    type: 'bill' as const,
-    title: 'Bill Reminder',
-    message: `Your ${billName} bill (${currency}${amount}) is due in ${daysUntilDue} day${daysUntilDue > 1 ? 's' : ''}`,
-    timestamp: new Date(),
-    priority: daysUntilDue <= 1 ? 'urgent' as const : daysUntilDue <= 3 ? 'high' as const : 'medium' as const,
-    actionUrl: '/transactions',
-    actionText: 'Pay Now',
-    amount
-});
-
-export const createGoalAchievement = (goalName: string, percentage: number) => ({
-    type: 'goal' as const,
-    title: 'Savings Goal Achievement',
-    message: `Congratulations! You've reached ${percentage}% of your ${goalName} goal`,
-    timestamp: new Date(),
-    priority: percentage >= 100 ? 'high' as const : 'low' as const,
-    actionUrl: '/dashboard',
-    actionText: 'View Goals'
-});
-
-// --- NEW UTILITY FUNCTIONS FOR ADDITIONAL NOTIFICATIONS ---
-
-/**
- * Creates an alert for when an account balance drops below a critical threshold.
- */
-export const createLowBalanceAlert = (accountName: string, currentBalance: number, threshold: number, currency: string = '$') => ({
-    type: 'security' as const, // Critical alert for account safety
-    title: '⚠️ Low Account Balance Alert',
-    message: `Your ${accountName} balance is critical: ${currency}${currentBalance.toFixed(2)}. This is below your threshold of ${currency}${threshold.toFixed(2)}.`,
-    timestamp: new Date(),
-    priority: 'urgent' as const,
-    actionUrl: '/accounts',
-    actionText: 'View Accounts',
-    amount: currentBalance,
-});
-
-/**
- * Creates an alert for unusual transactions based on historical averages.
- */
-export const createIrregularSpendingAlert = (merchant: string, category: string, amount: number, averageAmount: number, currency: string = '$') => ({
-    type: 'transaction' as const,
-    title: 'Unusual Spending Detected',
-    message: `You spent ${currency}${amount.toFixed(2)} at ${merchant} in ${category}. This is significantly higher than your average of ${currency}${averageAmount.toFixed(2)}.`,
-    timestamp: new Date(),
-    priority: 'high' as const,
-    actionUrl: '/transactions',
-    actionText: 'Review Transaction',
-    category,
-    amount,
-});
-
-/**
- * Notifies the user that a recurring financial report is ready.
- */
-export const createReportAvailableNotification = (reportPeriod: 'Weekly' | 'Monthly', keyInsight: string) => ({
-    type: 'system' as const,
-    title: `${reportPeriod} Report Available`,
-    message: `Your ${reportPeriod.toLowerCase()} spending report is ready to view. Key Insight: ${keyInsight}`,
-    timestamp: new Date(),
-    priority: 'low' as const,
-    actionUrl: '/analytics',
-    actionText: 'View Report',
-});
+// Re-export for backward compatibility
+export {
+    createBudgetAlert,
+    createTransactionAlert,
+    createBillReminder,
+    createGoalAchievement,
+    createLowBalanceAlert,
+    createIrregularSpendingAlert,
+    createReportAvailableNotification
+} from '../../lib/notificationUtils';

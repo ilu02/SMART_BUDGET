@@ -5,11 +5,15 @@ import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import { useTransactions } from '../contexts/TransactionContext';
+import { useBudgets } from '../contexts/BudgetContext';
 
 export default function DataSettings() {
   const { notifications, updateNotifications } = useSettings();
   const { user, logout } = useAuth();
   const router = useRouter();
+  const { transactions } = useTransactions();
+  const { budgets } = useBudgets();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
@@ -38,8 +42,95 @@ export default function DataSettings() {
   ];
 
   const handleExport = (format: string) => {
-    console.log(`Exporting data in ${format} format`);
-    toast.success(`Data exported in ${format.toUpperCase()} format`);
+    if (transactions.length === 0 && budgets.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    try {
+      if (format === 'csv') {
+        exportAsCSV();
+      } else if (format === 'json') {
+        exportAsJSON();
+      }
+      toast.success(`Data exported in ${format.toUpperCase()} format`);
+    } catch (error) {
+      toast.error('Failed to export data. Please try again.');
+      console.error('Export error:', error);
+    }
+  };
+
+  const exportAsCSV = () => {
+    // Export transactions
+    const transactionHeaders = ['Date', 'Description', 'Amount', 'Category', 'Type', 'Budget', 'Notes'];
+    const transactionRows = transactions.map(t => [
+      new Date(t.date).toLocaleDateString(),
+      `"${t.description}"`,
+      t.amount,
+      `"${t.category}"`,
+      t.type,
+      `"${t.budgetId || 'N/A'}"`,
+      `"${t.notes || ''}"`
+    ]);
+
+    // Export budgets
+    const budgetHeaders = ['Category', 'Budget Amount', 'Spent', 'Remaining', 'Icon', 'Color'];
+    const budgetRows = budgets.map(b => [
+      `"${b.category}"`,
+      b.budget,
+      b.spent || 0,
+      (b.budget - (b.spent || 0)),
+      b.icon || 'N/A',
+      b.color || 'N/A'
+    ]);
+
+    // Combine CSV content
+    const csvContent = [
+      'TRANSACTIONS',
+      transactionHeaders.join(','),
+      ...transactionRows.map(row => row.join(',')),
+      '',
+      'BUDGETS',
+      budgetHeaders.join(','),
+      ...budgetRows.map(row => row.join(',')),
+      '',
+      'SUMMARY',
+      `Total Transactions,${transactions.length}`,
+      `Total Budgets,${budgets.length}`,
+      `Export Date,"${new Date().toLocaleString()}"`
+    ].join('\n');
+
+    downloadFile(csvContent, 'text/csv', 'smart_budget_export.csv');
+  };
+
+  const exportAsJSON = () => {
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      transactions,
+      budgets,
+      summary: {
+        totalTransactions: transactions.length,
+        totalBudgets: budgets.length,
+        totalIncome: transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
+        totalExpenses: transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0)
+      }
+    };
+
+    const jsonContent = JSON.stringify(exportData, null, 2);
+    downloadFile(jsonContent, 'application/json', 'smart_budget_export.json');
+  };
+
+  const downloadFile = (content: string, mimeType: string, filename: string) => {
+    const blob = new Blob([content], { type: `${mimeType};charset=utf-8;` });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleDeleteAccount = async () => {

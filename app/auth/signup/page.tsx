@@ -6,6 +6,11 @@ import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
+interface PasswordRequirement {
+  label: string;
+  met: boolean;
+}
+
 export default function SignupPage() {
   const router = useRouter();
   const [name, setName] = useState('');
@@ -15,12 +20,31 @@ export default function SignupPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Password validation (same as settings page)
+  const getPasswordRequirements = (password: string): PasswordRequirement[] => {
+    return [
+      { label: 'At least 8 characters', met: password.length >= 8 },
+      { label: 'One uppercase letter', met: /[A-Z]/.test(password) },
+      { label: 'One lowercase letter', met: /[a-z]/.test(password) },
+      { label: 'One number', met: /[0-9]/.test(password) },
+      { label: 'One special character (!@#$%^&*)', met: /[!@#$%^&*(),.?":{}|<>]/.test(password) }
+    ];
+  };
+
+  const passwordRequirements = getPasswordRequirements(password);
+  const isPasswordValid = passwordRequirements.every(req => req.met);
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
     
     if (!name || !email || !password) {
       toast.error('Please fill in all fields.');
+      return;
+    }
+
+    if (!isPasswordValid) {
+      toast.error('Password does not meet all requirements');
       return;
     }
 
@@ -139,14 +163,37 @@ export default function SignupPage() {
                 <i className={showPassword ? 'ri-eye-off-line' : 'ri-eye-line'} aria-hidden="true"></i>
               </button>
             </div>
+            
+            {/* Password Requirements Display */}
+            {password && (
+              <div className="mt-3 space-y-2">
+                <p className="text-xs font-medium text-gray-700">Password Requirements:</p>
+                {passwordRequirements.map((req, index) => (
+                  <div key={index} className="flex items-center space-x-2 text-xs">
+                    {req.met ? (
+                      <i className="ri-checkbox-circle-fill text-green-500"></i>
+                    ) : (
+                      <i className="ri-checkbox-blank-circle-line text-gray-400"></i>
+                    )}
+                    <span className={req.met ? 'text-green-700' : 'text-gray-600'}>
+                      {req.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {submitted && !password && (
               <p className="mt-2 text-sm text-red-600">Password is required.</p>
+            )}
+            {submitted && password && !isPasswordValid && (
+              <p className="mt-2 text-sm text-red-600">Password does not meet all requirements.</p>
             )}
           </div>
 
           <Button
             type="submit"
-            disabled={loading}
+            disabled={loading || (submitted && !isPasswordValid)}
             loading={loading}
             className="w-full"
             size="lg"
